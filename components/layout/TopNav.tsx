@@ -1,7 +1,18 @@
 "use client";
 
-import { Menu, Bell } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { Menu, Bell, LogOut, User, Settings } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { ThemeSwitch } from "@/components/theme-switch";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TopNavProps {
   onMenuClick: () => void;
@@ -9,27 +20,78 @@ interface TopNavProps {
 
 export function TopNav({ onMenuClick }: TopNavProps) {
   const { data: session } = useSession();
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const userInitial = session?.user?.name?.[0]?.toUpperCase() || "U";
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6">
-      <button
+    <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
+      {/* Left: mobile menu toggle */}
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onMenuClick}
-        className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors lg:hidden"
+        className="h-8 w-8 text-muted-foreground hover:text-foreground lg:hidden"
         aria-label="Toggle menu"
       >
         <Menu className="w-5 h-5" />
-      </button>
+      </Button>
       <div className="hidden lg:block" />
 
-      <div className="flex items-center gap-2">
-        <button className="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">
-          <Bell className="w-5 h-5" />
-        </button>
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-xs">
-            {session?.user?.name?.[0]?.toUpperCase() || "U"}
-          </div>
-          <span className="text-sm text-slate-700 font-medium hidden sm:block">{session?.user?.name}</span>
+      {/* Right: actions */}
+      <div className="flex items-center gap-1">
+        {/* Theme toggle */}
+        <ThemeSwitch />
+
+        {/* Notifications */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground relative"
+          aria-label="Notifications"
+        >
+          <Bell className="w-[1.1rem] h-[1.1rem]" />
+        </Button>
+
+        {/* User menu */}
+        <div className="pl-1 border-l border-border ml-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-8 px-2 gap-2 text-sm font-medium hover:bg-accent"
+              >
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                    {userInitial}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:block text-foreground">
+                  {session?.user?.name}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>
+                <div className="font-semibold">{session?.user?.name}</div>
+                <div className="text-xs text-muted-foreground font-normal">{role}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <a href="/settings" className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

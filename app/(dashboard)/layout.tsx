@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import {
   LayoutDashboard, Package, ClipboardList, FileText, CreditCard,
 } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 const bottomNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "CEO", "ACCOUNTANT"] },
@@ -25,24 +27,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const role = (session?.user as { role?: string } | undefined)?.role;
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "#F8FAFC" }}>
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col">
+      <aside className="hidden lg:flex flex-shrink-0">
         <Sidebar />
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 flex lg:hidden">
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <aside className="relative z-50 w-72 flex flex-col shadow-2xl">
-            <Sidebar onClose={() => setSidebarOpen(false)} />
-          </aside>
-        </div>
-      )}
+      {/* Mobile Sidebar via Sheet */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent side="left" className="p-0 w-72">
+          <Sidebar onClose={() => setSidebarOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -52,7 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
         {/* Mobile Bottom Nav */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-30">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-30">
           <div className="flex">
             {bottomNavItems
               .filter((item) => !role || item.roles.includes(role))
@@ -64,9 +60,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors ${
-                      isActive ? "text-blue-600" : "text-slate-400"
-                    }`}
+                    className={cn(
+                      "flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    )}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="text-[10px]">{item.label}</span>
