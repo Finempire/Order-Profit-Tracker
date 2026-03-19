@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/utils";
+import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/server-utils";
 import { getAbsolutePath, getRelativePath } from "@/lib/upload";
 import path from "path";
 import fs from "fs";
@@ -157,3 +157,4 @@ export async function POST(request: Request) {
     return errorResponse(message, 500);
   }
 }
+

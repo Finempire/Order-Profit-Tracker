@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/utils";
+import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/server-utils";
 import { orderSchema } from "@/lib/validations/order";
 
 const ALLOWED_ROLES = ["ADMIN", "CEO", "ACCOUNTANT"];
@@ -125,3 +125,4 @@ export async function POST(request: Request) {
     return errorResponse("Failed to create order", 500);
   }
 }
+

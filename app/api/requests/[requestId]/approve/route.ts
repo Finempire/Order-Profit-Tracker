@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/utils";
+import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/server-utils";
 
 const APPROVE_ROLES = ["ADMIN", "CEO", "ACCOUNTANT"];
 

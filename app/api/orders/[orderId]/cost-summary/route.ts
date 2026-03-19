@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getOrderCostSummary } from "@/lib/cost-calculator";
-import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/utils";
+import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/server-utils";
 
 const ALLOWED_ROLES = ["ADMIN", "CEO", "ACCOUNTANT"];
 

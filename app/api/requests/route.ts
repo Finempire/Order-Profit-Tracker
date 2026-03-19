@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { generateRequestNumber, successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/utils";
+import { generateRequestNumber, successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/server-utils";
 import { requestSchema } from "@/lib/validations/request";
 
 export async function GET(request: Request) {
@@ -103,3 +103,4 @@ export async function POST(request: Request) {
     return errorResponse("Failed to create request", 500);
   }
 }
+

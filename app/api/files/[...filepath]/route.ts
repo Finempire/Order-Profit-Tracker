@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { unauthorizedResponse, errorResponse } from "@/lib/utils";
+import { unauthorizedResponse, errorResponse } from "@/lib/server-utils";
 import path from "path";
 import fs from "fs";
 import { NextResponse } from "next/server";

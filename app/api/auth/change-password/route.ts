@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/utils";
+import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/server-utils";
 
 export const runtime = "nodejs";
 
@@ -33,3 +33,4 @@ export async function POST(request: Request) {
 
   return successResponse({}, "Password changed successfully");
 }
+
