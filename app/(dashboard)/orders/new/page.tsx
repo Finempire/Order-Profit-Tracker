@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Loader2, ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
@@ -32,9 +33,8 @@ interface BuyerOption {
   gstin?: string;
 }
 
-export default function NewOrderPage() {
+function NewOrderContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const qc = useQueryClient();
   const [buyerSearch, setBuyerSearch] = useState("");
   const [buyerDropdownOpen, setBuyerDropdownOpen] = useState(false);
@@ -315,5 +315,13 @@ export default function NewOrderPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function NewOrderPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-slate-400">Loading...</div>}>
+      <NewOrderContent />
+    </Suspense>
   );
 }
