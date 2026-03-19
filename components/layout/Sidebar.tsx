@@ -9,6 +9,12 @@ import {
   FileText, CreditCard, BarChart3, Settings, LogOut, Factory,
   X, ChevronLeft, ChevronRight, Plus,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/dashboard",  label: "Dashboard",        icon: LayoutDashboard, roles: ["ADMIN", "CEO", "ACCOUNTANT"] },
@@ -49,141 +55,215 @@ export function Sidebar({ onClose }: SidebarProps) {
   );
 
   const isProduction = role === "PRODUCTION";
+  const userInitial = session?.user?.name?.[0]?.toUpperCase() || "U";
 
   return (
-    <div
-      className={`flex flex-col h-full bg-white border-r border-slate-200 transition-all duration-200 ${
-        collapsed ? "w-16" : "w-64"
-      }`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100 min-h-[60px]">
-        <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-            <Factory className="w-4 h-4 text-white" />
-          </div>
-          {!collapsed && (
-            <span className="sidebar-brand-name font-bold text-slate-900 text-sm tracking-tight truncate">
-              ManufacturePro
-            </span>
+    <TooltipProvider delayDuration={0}>
+      <div
+        className={cn(
+          "flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-200",
+          collapsed ? "w-14" : "w-64"
+        )}
+      >
+        {/* ── Header ────────────────────────────── */}
+        <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border min-h-[56px]">
+          <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
+              <Factory className="w-4 h-4 text-primary-foreground" />
+            </div>
+            {!collapsed && (
+              <span className="font-bold text-sidebar-foreground text-sm tracking-tight truncate">
+                ManufacturePro
+              </span>
+            )}
+          </Link>
+
+          {onClose ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-7 w-7 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent lg:hidden"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleCollapsed}
+              className="h-7 w-7 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent hidden lg:flex"
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {collapsed ? (
+                <ChevronRight className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronLeft className="w-3.5 h-3.5" />
+              )}
+            </Button>
           )}
-        </Link>
-        {onClose ? (
-          <button onClick={onClose} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 lg:hidden">
-            <X className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            onClick={toggleCollapsed}
-            className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 transition-colors hidden lg:flex items-center justify-center"
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-          </button>
+        </div>
+
+        {/* ── Production CTA ────────────────────── */}
+        {isProduction && (
+          <div className={cn("px-2 pt-3", collapsed && "px-1.5")}>
+            {collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href="/requests/new"
+                    onClick={onClose}
+                    className="flex items-center justify-center w-10 h-10 mx-auto rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">Raise Request</TooltipContent>
+              </Tooltip>
+            ) : (
+              <Link
+                href="/requests/new"
+                onClick={onClose}
+                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Raise Request
+              </Link>
+            )}
+          </div>
         )}
-      </div>
 
-      {/* Production: Raise Request CTA */}
-      {isProduction && !collapsed && (
-        <div className="px-3 pt-3">
-          <Link
-            href="/requests/new"
-            onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Raise Request
-          </Link>
-        </div>
-      )}
-      {isProduction && collapsed && (
-        <div className="px-2 pt-3">
-          <Link
-            href="/requests/new"
-            onClick={onClose}
-            title="Raise Request"
-            className="flex items-center justify-center w-10 h-10 mx-auto rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-          </Link>
-        </div>
-      )}
+        {/* ── Nav ───────────────────────────────── */}
+        <ScrollArea className="flex-1 px-2 py-2">
+          <nav className="space-y-0.5">
+            {filteredItems.map((item) => {
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              const Icon = item.icon;
 
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-        {filteredItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-sm font-medium transition-all relative group ${
-                isActive
-                  ? "bg-blue-50 text-blue-700 border-l-2 border-blue-600"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-l-2 border-transparent"
-              } ${collapsed ? "justify-center" : ""}`}
-            >
-              <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
-              {!collapsed && (
-                <span className="sidebar-label truncate">{item.label}</span>
+              const linkContent = (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all relative",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-primary font-semibold"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                    collapsed && "justify-center px-0"
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "w-[18px] h-[18px] flex-shrink-0",
+                      isActive
+                        ? "text-sidebar-primary"
+                        : "text-sidebar-foreground/50"
+                    )}
+                  />
+                  {!collapsed && (
+                    <span className="truncate">{item.label}</span>
+                  )}
+                </Link>
+              );
+
+              if (collapsed) {
+                return (
+                  <Tooltip key={item.href}>
+                    <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                    <TooltipContent side="right">{item.label}</TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return linkContent;
+            })}
+          </nav>
+
+          {role === "ADMIN" && (
+            <>
+              <Separator className="my-2 bg-sidebar-border" />
+              {collapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/settings"
+                      onClick={onClose}
+                      className={cn(
+                        "flex items-center justify-center px-0 py-2 rounded-lg text-sm font-medium transition-all",
+                        pathname.startsWith("/settings")
+                          ? "bg-sidebar-accent text-sidebar-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <Settings className="w-[18px] h-[18px]" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Settings</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  href="/settings"
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all",
+                    pathname.startsWith("/settings")
+                      ? "bg-sidebar-accent text-sidebar-primary font-semibold"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <Settings className="w-[18px] h-[18px] flex-shrink-0 text-sidebar-foreground/50" />
+                  <span>Settings</span>
+                </Link>
               )}
-              {/* Tooltip when collapsed */}
-              {collapsed && (
-                <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-slate-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  {item.label}
-                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+            </>
+          )}
+        </ScrollArea>
+
+        {/* ── User Footer ───────────────────────── */}
+        <div className="p-2 border-t border-sidebar-border">
+          {!collapsed && (
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg mb-1">
+              <Avatar className="h-8 w-8 flex-shrink-0">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-sidebar-foreground truncate">
+                  {session?.user?.name}
                 </div>
-              )}
-            </Link>
-          );
-        })}
+                <div className="text-xs text-sidebar-foreground/50 font-medium">
+                  {role}
+                </div>
+              </div>
+            </div>
+          )}
 
-        {role === "ADMIN" && (
-          <div className="pt-2 mt-2 border-t border-slate-100">
-            <Link
-              href="/settings"
-              onClick={onClose}
-              title={collapsed ? "Settings" : undefined}
-              className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-sm font-medium transition-all border-l-2 ${
-                pathname.startsWith("/settings")
-                  ? "bg-blue-50 text-blue-700 border-blue-600"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent"
-              } ${collapsed ? "justify-center" : ""}`}
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="w-full flex items-center justify-center py-2 rounded-lg text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Logout</TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all"
             >
-              <Settings className="w-[18px] h-[18px] flex-shrink-0 text-slate-400" />
-              {!collapsed && <span className="sidebar-label">Settings</span>}
-            </Link>
-          </div>
-        )}
-      </nav>
-
-      {/* User Footer */}
-      <div className="p-2 border-t border-slate-100">
-        {!collapsed && (
-          <div className="user-info flex items-center gap-2.5 px-2 py-2 rounded-lg mb-1">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm flex-shrink-0">
-              {session?.user?.name?.[0]?.toUpperCase() || "U"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-slate-900 truncate">{session?.user?.name}</div>
-              <div className="text-xs text-slate-400 font-medium">{role}</div>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          title={collapsed ? "Logout" : undefined}
-          className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!collapsed && <span>Logout</span>}
-        </button>
+              <LogOut className="w-4 h-4 flex-shrink-0" />
+              <span>Logout</span>
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
