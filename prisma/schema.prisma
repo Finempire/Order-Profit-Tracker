@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CEO
+  ACCOUNTANT
+  PRODUCTION
+}
+
+enum RequestType {
+  MATERIAL
+  EXPENSE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceType {
+  PROVISIONAL
+  TAX
+  OTHER
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  name               String
+  email              String    @unique
+  password           String
+  role               Role      @default(PRODUCTION)
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  requests  PurchaseRequest[]
+  approvals PurchaseRequest[] @relation("approvedBy")
+}
+
+model Buyer {
+  id              String   @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  address         String?
+  shippingAddress String?
+  gstin           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Order {
+  id           String    @id @default(cuid())
+  orderNumber  String    @unique
+  orderDate    DateTime
+  shippingDate DateTime?
+  buyerId      String
+  buyer        Buyer     @relation(fields: [buyerId], references: [id])
+  notes        String?
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  items    OrderItem[]
+  requests PurchaseRequest[]
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemName    String
+  description String?
+  qty         Float
+  rate        Float
+  amount      Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requests PurchaseRequest[]
+}
+
+model Vendor {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  gstin     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoices VendorInvoice[]
+}
+
+model PurchaseRequest {
+  id              String        @id @default(cuid())
+  requestNumber   String        @unique
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id])
+  orderItemId     String?
+  orderItem       OrderItem?    @relation(fields: [orderItemId], references: [id])
+  requestType     RequestType
+  description     String
+  qty             Float
+  rate            Float
+  estimatedAmount Float
+  status          RequestStatus @default(PENDING)
+  requestedById   String
+  requestedBy     User          @relation(fields: [requestedById], references: [id])
+  approvedById    String?
+  approvedBy      User?         @relation("approvedBy", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  rejectionNote   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  invoices VendorInvoice[]
+}
+
+model VendorInvoice {
+  id               String        @id @default(cuid())
+  requestId        String
+  request          PurchaseRequest @relation(fields: [requestId], references: [id])
+  vendorId         String
+  vendor           Vendor        @relation(fields: [vendorId], references: [id])
+  invoiceNumber    String
+  invoiceDate      DateTime
+  invoiceType      InvoiceType   @default(PROVISIONAL)
+  description      String?
+  qty              Float
+  rate             Float
+  amount           Float
+  gstAmount        Float         @default(0)
+  totalAmount      Float
+  invoiceFilePath  String?
+  paymentStatus    PaymentStatus @default(UNPAID)
+  paidAmount       Float         @default(0)
+  paidAt           DateTime?
+  paymentProofPath String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([vendorId, invoiceNumber])
+}
