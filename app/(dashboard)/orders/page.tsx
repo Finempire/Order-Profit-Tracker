@@ -4,9 +4,47 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Plus, Search, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+
+type OrderRow = {
+  id: string;
+  orderNumber: string;
+  orderDate: string;
+  shippingDate: string | null;
+  status: string;
+  orderValue: number;
+  estimatedCost: number;
+  invoicedCost: number;
+  costVariance: number;
+  buyer: { name: string };
+};
+
+function CostHealthBar({ estimated, invoiced }: { estimated: number; invoiced: number }) {
+  if (estimated <= 0) return <div className="text-xs text-slate-300">—</div>;
+  const pct = Math.round((invoiced / estimated) * 100);
+  const capped = Math.min(pct, 100);
+  const barColor = pct <= 95 ? "cost-bar-green" : pct <= 105 ? "cost-bar-yellow" : "cost-bar-red";
+  const labelColor = pct > 105 ? "text-red-600" : pct > 95 ? "text-amber-600" : "text-emerald-600";
+  const Icon = pct > 105 ? TrendingUp : pct > 95 ? TrendingUp : TrendingDown;
+
+  return (
+    <div className="min-w-32">
+      <div className="flex items-center gap-1.5 mb-1">
+        <div className={`cost-bar-wrap flex-1`}>
+          <div className={`cost-bar-fill ${barColor}`} style={{ width: `${capped}%` }} />
+        </div>
+        <span className={`text-xs font-bold tabular-nums ${labelColor}`}>{pct}%</span>
+      </div>
+      <div className={`text-xs flex items-center gap-1 ${labelColor}`}>
+        <Icon className="w-3 h-3" />
+        <span>{pct > 105 ? "Over budget" : pct > 95 ? "Near limit" : "Within budget"}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function OrdersPage() {
   const { data: session } = useSession();
@@ -15,7 +53,7 @@ export default function OrdersPage() {
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [page, setPage] = useState(1);
+  const [page, setPage]   = useState(1);
   const limit = 20;
 
   const { data, isLoading } = useQuery({
@@ -31,17 +69,17 @@ export default function OrdersPage() {
     },
   });
 
-  const orders = data?.data?.orders || [];
-  const total = data?.data?.total || 0;
+  const orders: OrderRow[] = data?.data?.orders || [];
+  const total      = data?.data?.total      || 0;
   const totalPages = data?.data?.totalPages || 1;
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Orders</h1>
-          <p className="text-slate-500 text-sm">{total} total orders</p>
+          <p className="text-slate-400 text-sm">{total} total orders</p>
         </div>
         {canCreate && (
           <Link href="/orders/new" className="btn-primary">
@@ -50,13 +88,13 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-52">
+      {/* Sticky search + filter bar */}
+      <div className="card p-3 sticky top-0 z-10 flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-48">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search order no. or buyer..."
+            placeholder="Search order no. or buyer name..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="form-input pl-9"
@@ -74,20 +112,19 @@ export default function OrdersPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="card p-0">
+      {/* Table — desktop */}
+      <div className="card p-0 hidden sm:block">
         <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
                 <th>Order No.</th>
                 <th>Order Date</th>
-                <th>Shipping Date</th>
                 <th>Buyer</th>
                 <th>Order Value</th>
                 <th>Est. Cost</th>
                 <th>Invoiced</th>
-                <th>Variance</th>
+                <th>Cost Health</th>
                 <th>Status</th>
                 <th></th>
               </tr>
@@ -96,48 +133,50 @@ export default function OrdersPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(10)].map((_, j) => (
-                      <td key={j}><div className="h-4 bg-slate-100 animate-pulse rounded w-24" /></td>
+                    {[...Array(9)].map((_, j) => (
+                      <td key={j}>
+                        <div className="skeleton skeleton-text w-20" />
+                      </td>
                     ))}
                   </tr>
                 ))
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-12 text-slate-400">
-                    No orders found
+                  <td colSpan={9}>
+                    {search || status ? (
+                      <EmptyState variant="search" searchTerm={search || status} />
+                    ) : (
+                      <EmptyState
+                        variant="orders"
+                        ctaLabel={canCreate ? "+ Create First Order" : undefined}
+                        ctaHref={canCreate ? "/orders/new" : undefined}
+                      />
+                    )}
                   </td>
                 </tr>
               ) : (
-                orders.map((order: {
-                  id: string; orderNumber: string; orderDate: string; shippingDate: string | null;
-                  status: string; orderValue: number; estimatedCost: number; invoicedCost: number;
-                  costVariance: number; buyer: { name: string };
-                }) => (
-                  <tr key={order.id}>
+                orders.map((order) => (
+                  <tr key={order.id} className={order.invoicedCost > order.estimatedCost && order.estimatedCost > 0 ? "row-overrun" : ""}>
                     <td>
-                      <Link href={`/orders/${order.id}`} className="font-medium text-blue-600 hover:underline font-mono text-sm">
+                      <Link href={`/orders/${order.id}`} className="font-mono text-xs font-semibold text-blue-600 hover:underline">
                         {order.orderNumber}
                       </Link>
                     </td>
-                    <td className="text-sm text-slate-600">{formatDate(order.orderDate)}</td>
-                    <td className="text-sm text-slate-500">{order.shippingDate ? formatDate(order.shippingDate) : "—"}</td>
+                    <td className="text-sm text-slate-500">{formatDate(order.orderDate)}</td>
                     <td className="font-medium text-slate-900">{order.buyer.name}</td>
-                    <td className="font-semibold">{formatCurrency(order.orderValue)}</td>
-                    <td>{formatCurrency(order.estimatedCost)}</td>
-                    <td>{formatCurrency(order.invoicedCost)}</td>
+                    <td className="num">{formatCurrency(order.orderValue)}</td>
+                    <td className="num text-slate-500">{formatCurrency(order.estimatedCost)}</td>
+                    <td className={`num font-semibold ${order.invoicedCost > order.estimatedCost && order.estimatedCost > 0 ? "text-red-600" : "text-slate-700"}`}>
+                      {formatCurrency(order.invoicedCost)}
+                    </td>
                     <td>
-                      <span className={`text-sm font-medium ${order.costVariance > 0 ? "text-red-600" : order.costVariance < 0 ? "text-green-600" : "text-slate-400"}`}>
-                        {order.costVariance > 0 ? "+" : ""}{formatCurrency(order.costVariance)}
-                      </span>
+                      <CostHealthBar estimated={order.estimatedCost} invoiced={order.invoicedCost} />
                     </td>
                     <td><StatusBadge status={order.status} /></td>
                     <td>
-                      <div className="flex items-center gap-2">
-                        <Link href={`/orders/${order.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
-                        {canCreate && (
-                          <Link href={`/orders/${order.id}/edit`} className="text-xs text-slate-500 hover:underline">Edit</Link>
-                        )}
-                      </div>
+                      <Link href={`/orders/${order.id}`} className="text-xs text-blue-600 hover:underline font-medium">
+                        View →
+                      </Link>
                     </td>
                   </tr>
                 ))
@@ -149,29 +188,51 @@ export default function OrdersPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-            <p className="text-sm text-slate-500">
+            <p className="text-xs text-slate-500">
               Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
             </p>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="btn-secondary p-2"
-              >
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary p-2">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm text-slate-600">
-                {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="btn-secondary p-2"
-              >
+              <span className="text-sm text-slate-600 tabular-nums">{page} / {totalPages}</span>
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-secondary p-2">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Mobile card view */}
+      <div className="sm:hidden space-y-3">
+        {isLoading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="skeleton" style={{ height: 100 }} />
+          ))
+        ) : orders.length === 0 ? (
+          <EmptyState
+            variant={search ? "search" : "orders"}
+            searchTerm={search}
+            ctaLabel={canCreate ? "+ Create First Order" : undefined}
+            ctaHref={canCreate ? "/orders/new" : undefined}
+          />
+        ) : (
+          orders.map((order) => (
+            <Link key={order.id} href={`/orders/${order.id}`} className="mobile-card block">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-sm font-bold text-blue-600">{order.orderNumber}</span>
+                <StatusBadge status={order.status} />
+              </div>
+              <div className="text-sm font-medium text-slate-800">{order.buyer.name}</div>
+              <div className="flex justify-between text-xs text-slate-500 mt-0.5">
+                <span>Value: <span className="tabular-nums font-medium">{formatCurrency(order.orderValue)}</span></span>
+                <span>Invoiced: <span className={`tabular-nums font-medium ${order.invoicedCost > order.estimatedCost ? "text-red-600" : ""}`}>{formatCurrency(order.invoicedCost)}</span></span>
+              </div>
+              <CostHealthBar estimated={order.estimatedCost} invoiced={order.invoicedCost} />
+              <div className="text-xs text-slate-400">{formatDate(order.orderDate)}</div>
+            </Link>
+          ))
         )}
       </div>
     </div>

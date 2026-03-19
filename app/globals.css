@@ -7,9 +7,9 @@
   --color-border: #E2E8F0;
   --color-primary: #2563EB;
   --color-primary-hover: #1D4ED8;
-  --color-success: #16A34A;
-  --color-warning: #D97706;
-  --color-danger: #DC2626;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
   --color-text-primary: #0F172A;
   --color-text-secondary: #475569;
   --color-text-muted: #94A3B8;
@@ -20,6 +20,32 @@
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); max-height: 0; }
+  to   { opacity: 1; transform: translateY(0);    max-height: 500px; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes checkPop {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes pulseBorder {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.2); }
+  50%       { box-shadow: 0 0 0 4px rgba(239,68,68,0.15); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
 @layer base {
   html {
     font-family: var(--font-sans);
@@ -28,14 +54,9 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
-  body {
-    margin: 0;
-    padding: 0;
-  }
+  body { margin: 0; padding: 0; }
 
   h1, h2, h3, h4, h5, h6 {
     color: #0F172A;
@@ -43,17 +64,14 @@
     line-height: 1.3;
   }
 
-  a {
-    text-decoration: none;
-    color: inherit;
-  }
+  a { text-decoration: none; color: inherit; }
 
-  input, textarea, select {
-    outline: none;
-  }
+  input, textarea, select { outline: none; }
 }
 
 @layer components {
+
+  /* ── Cards ─────────────────────────────────── */
   .card {
     background: #FFFFFF;
     border-radius: 0.75rem;
@@ -62,6 +80,7 @@
     padding: 1.5rem;
   }
 
+  /* ── Buttons ────────────────────────────────── */
   .btn-primary {
     background: #2563EB;
     color: white;
@@ -71,12 +90,12 @@
     font-weight: 500;
     border: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, box-shadow 0.15s;
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
   }
-  .btn-primary:hover { background: #1D4ED8; }
+  .btn-primary:hover { background: #1D4ED8; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
   .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .btn-secondary {
@@ -94,9 +113,10 @@
     gap: 0.375rem;
   }
   .btn-secondary:hover { background: #F8FAFC; }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-danger {
-    background: #DC2626;
+    background: #EF4444;
     color: white;
     border-radius: 0.5rem;
     padding: 0.5rem 1rem;
@@ -109,23 +129,42 @@
     align-items: center;
     gap: 0.375rem;
   }
-  .btn-danger:hover { background: #B91C1C; }
+  .btn-danger:hover { background: #DC2626; }
 
+  .btn-success {
+    background: #10B981;
+    color: white;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .btn-success:hover { background: #059669; }
+
+  /* ── Forms ──────────────────────────────────── */
   .form-input {
     width: 100%;
     border: 1px solid #E2E8F0;
     border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.5625rem 0.75rem;
     font-size: 0.875rem;
     color: #0F172A;
     background: #FFFFFF;
     transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: var(--font-sans);
   }
   .form-input:focus {
     border-color: #2563EB;
     box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
   }
   .form-input::placeholder { color: #94A3B8; }
+  .form-input:disabled { background: #F8FAFC; color: #94A3B8; cursor: not-allowed; }
 
   .form-label {
     display: block;
@@ -137,31 +176,37 @@
 
   .form-error {
     font-size: 0.75rem;
-    color: #DC2626;
+    color: #EF4444;
     margin-top: 0.25rem;
   }
 
+  /* ── Badges ─────────────────────────────────── */
   .badge {
     display: inline-flex;
     align-items: center;
     border-radius: 9999px;
-    padding: 0.15rem 0.625rem;
-    font-size: 0.75rem;
-    font-weight: 500;
+    padding: 0.175rem 0.625rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
 
   .badge-pending   { background: #FEF3C7; color: #92400E; }
-  .badge-approved  { background: #DCFCE7; color: #14532D; }
-  .badge-rejected  { background: #FEE2E2; color: #7F1D1D; }
-  .badge-active    { background: #DBEAFE; color: #1E3A5F; }
+  .badge-approved  { background: #D1FAE5; color: #065F46; }
+  .badge-rejected  { background: #FEE2E2; color: #991B1B; }
+  .badge-active    { background: #DBEAFE; color: #1E40AF; }
   .badge-completed { background: #F0FDF4; color: #14532D; }
   .badge-cancelled { background: #F1F5F9; color: #475569; }
   .badge-paid      { background: #D1FAE5; color: #064E3B; }
   .badge-partial   { background: #FFEDD5; color: #7C2D12; }
-  .badge-unpaid    { background: #F1F5F9; color: #475569; }
-  .badge-material  { background: #EDE9FE; color: #4C1D95; }
+  .badge-unpaid    { background: #FEF2F2; color: #991B1B; }
+  .badge-material  { background: #EDE9FE; color: #5B21B6; }
   .badge-expense   { background: #FEF9C3; color: #713F12; }
+  .badge-provisional { background: #E0F2FE; color: #0C4A6E; }
+  .badge-tax         { background: #F0FDF4; color: #14532D; }
 
+  /* ── Tables ─────────────────────────────────── */
   .table-wrapper {
     overflow-x: auto;
     border-radius: 0.75rem;
@@ -177,11 +222,11 @@
     background: #F8FAFC;
     padding: 0.75rem 1rem;
     text-align: left;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 600;
-    color: #475569;
+    color: #64748B;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     border-bottom: 1px solid #E2E8F0;
     white-space: nowrap;
   }
@@ -196,30 +241,283 @@
     color: #0F172A;
     vertical-align: middle;
   }
+  table.data-table tbody td.num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    font-weight: 500;
+  }
 
+  /* ── KPI Cards ──────────────────────────────── */
   .kpi-card {
+    background: #FFFFFF;
+    border-radius: 0.875rem;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 4px 0 rgba(0,0,0,0.06);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: box-shadow 0.2s;
+  }
+  .kpi-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+  .kpi-icon-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+  }
+  .kpi-icon-blue   { background: #DBEAFE; color: #2563EB; }
+  .kpi-icon-amber  { background: #FEF3C7; color: #D97706; }
+  .kpi-icon-red    { background: #FEE2E2; color: #EF4444; }
+  .kpi-icon-green  { background: #D1FAE5; color: #10B981; }
+
+  .kpi-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0F172A;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  .kpi-sub {
+    font-size: 0.75rem;
+    color: #94A3B8;
+    margin-top: 0.125rem;
+  }
+  .kpi-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 0.375rem;
+  }
+
+  /* ── Cost Health Progress Bar ───────────────── */
+  .cost-bar-wrap {
+    width: 100%;
+    height: 6px;
+    background: #F1F5F9;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .cost-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+  .cost-bar-green  { background: #10B981; }
+  .cost-bar-yellow { background: #F59E0B; }
+  .cost-bar-red    { background: #EF4444; }
+
+  /* ── Skeleton Loaders ───────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.375rem;
+  }
+  .skeleton-text  { height: 0.875rem; }
+  .skeleton-title { height: 1.25rem; }
+  .skeleton-kpi   { height: 5rem; border-radius: 0.875rem; }
+
+  /* ── Success Screen ─────────────────────────── */
+  .success-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+  }
+  .success-check-circle {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    background: #D1FAE5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    animation: checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  /* ── Progress Steps ─────────────────────────── */
+  .step-bar {
+    width: 100%;
+    height: 4px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .step-bar-fill {
+    height: 100%;
+    background: #2563EB;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  /* ── Sidebar Collapsed Rail ─────────────────── */
+  .sidebar-collapsed .sidebar-label { display: none; }
+  .sidebar-collapsed .sidebar-brand-name { display: none; }
+  .sidebar-collapsed nav a {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .sidebar-collapsed .user-info { display: none; }
+
+  /* ── Inline Reject Textarea ─────────────────── */
+  .reject-inline {
+    animation: slideDown 0.2s ease forwards;
+    overflow: hidden;
+  }
+
+  /* ── Mobile Card View ───────────────────────── */
+  .mobile-card {
     background: #FFFFFF;
     border-radius: 0.75rem;
     border: 1px solid #E2E8F0;
-    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
-    padding: 1.25rem 1.5rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    animation: slideUp 0.15s ease;
   }
-  .kpi-card .kpi-label {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #475569;
+
+  /* ── File Upload Zone ───────────────────────── */
+  .upload-zone {
+    border: 2px dashed #CBD5E1;
+    border-radius: 0.75rem;
+    background: #F8FAFC;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
   }
-  .kpi-card .kpi-value {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: #0F172A;
-    line-height: 1;
+  .upload-zone:hover,
+  .upload-zone.drag-over {
+    border-color: #2563EB;
+    background: #EFF6FF;
   }
-  .kpi-card .kpi-sub {
-    font-size: 0.75rem;
+
+  /* ── Overrun Row Pulse ──────────────────────── */
+  .row-overrun {
+    animation: pulseBorder 1.5s ease 2;
+  }
+
+  /* ── Buyer Info Card ─────────────────────────── */
+  .buyer-info-card {
+    border: 1px solid #DBEAFE;
+    background: #EFF6FF;
+    border-radius: 0.75rem;
+    padding: 0.875rem 1rem;
+    animation: slideDown 0.2s ease;
+  }
+
+  /* ── Tabular nums utility ─────────────────────── */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* ── Amount Display Card ─────────────────────── */
+  .amount-display {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+
+  /* ── Empty State ─────────────────────────────── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
     color: #94A3B8;
   }
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    line-height: 1;
+  }
+  .empty-state h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #475569;
+    margin: 0 0 0.375rem;
+  }
+  .empty-state p {
+    font-size: 0.875rem;
+    color: #94A3B8;
+    margin: 0 0 1.25rem;
+    max-width: 280px;
+  }
+
+  /* ── Sticky CTA (mobile) ─────────────────────── */
+  .sticky-cta {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.875rem 1rem;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid #E2E8F0;
+    z-index: 10;
+  }
+
+  /* ── Approve / Reject inline buttons ─────────── */
+  .btn-approve {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3125rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    border: 1px solid #BBF7D0;
+    background: #F0FDF4;
+    color: #15803D;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-approve:hover { background: #DCFCE7; border-color: #86EFAC; }
+  .btn-approve:disabled { opacity: 0.6; cursor: wait; }
+  .btn-approve.success { background: #10B981; color: white; border-color: #10B981; }
+
+  .btn-reject {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3125rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    border: 1px solid #FECACA;
+    background: #FFF5F5;
+    color: #DC2626;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-reject:hover { background: #FEE2E2; border-color: #FCA5A5; }
 }

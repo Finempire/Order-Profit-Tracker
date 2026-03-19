@@ -109,70 +109,127 @@ export default function ProcurementPage() {
   };
 
   if (isLoading) {
-    return <div className="p-6"><div className="h-32 bg-slate-100 animate-pulse rounded-xl" /></div>;
+    return (
+      <div className="p-4 lg:p-6 space-y-4">
+        <div className="skeleton" style={{ height: 80 }} />
+        <div className="skeleton skeleton-kpi" />
+        <div className="skeleton" style={{ height: 200 }} />
+      </div>
+    );
   }
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><ArrowLeft className="w-4 h-4" /></button>
+        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+        </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Add Invoice</h1>
-          <p className="text-slate-500 text-sm">Request #{requestId.slice(0, 8)}...</p>
+          <h1 className="text-xl font-bold text-slate-900">Vendor Invoices</h1>
+          <p className="text-slate-400 text-sm">Request #{requestId.slice(0, 8)}...</p>
         </div>
       </div>
 
       {/* Existing invoices */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-slate-900">Invoices for this Request ({invoices.length})</h2>
-          <button onClick={() => setShowForm(!showForm)} className="btn-primary text-sm">
+          <div>
+            <h2 className="font-semibold text-slate-900">Invoices Uploaded ({invoices.length})</h2>
+            {invoices.length > 0 && (
+              <p className="text-xs text-slate-400 mt-0.5">
+                Total: <span className="font-bold tabular-nums">{formatCurrency(invoices.reduce((s: number, i: { totalAmount: number }) => s + i.totalAmount, 0))}</span>
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className={showForm ? "btn-secondary text-sm" : "btn-primary text-sm"}
+          >
             {showForm ? "Cancel" : "+ Add Invoice"}
           </button>
         </div>
 
         {invoices.length === 0 && !showForm ? (
-          <div className="py-8 text-center text-slate-400">
-            <p className="text-sm">No invoices yet. Add the first one.</p>
+          <div className="empty-state py-10">
+            <div className="empty-state-icon">🧾</div>
+            <h3>No invoices yet</h3>
+            <p>Add the first vendor invoice for this purchase request.</p>
           </div>
         ) : (
-          <div className="table-wrapper">
-            <table className="data-table">
-              <thead>
-                <tr><th>Invoice No.</th><th>Vendor</th><th>Type</th><th>Amount</th><th>GST</th><th>Total</th><th>Pay Status</th><th>Files</th></tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv: { id: string; invoiceNumber: string; invoiceType: string; amount: number; gstAmount: number; totalAmount: number; paymentStatus: string; paidAmount: number; invoiceFilePath: string | null; paymentProofPath: string | null; vendor: { name: string }; invoiceDate: string }) => (
-                  <tr key={inv.id}>
-                    <td><span className="font-mono text-xs font-medium">{inv.invoiceNumber}</span></td>
-                    <td>{inv.vendor.name}</td>
-                    <td><StatusBadge status={inv.invoiceType} /></td>
-                    <td>{formatCurrency(inv.amount)}</td>
-                    <td>{formatCurrency(inv.gstAmount)}</td>
-                    <td className="font-semibold">{formatCurrency(inv.totalAmount)}</td>
-                    <td><StatusBadge status={inv.paymentStatus} /></td>
-                    <td>
-                      <div className="flex gap-2">
-                        {inv.invoiceFilePath && (
-                          <a href={`/api/files/${inv.invoiceFilePath}`} target="_blank" rel="noopener" className="text-xs text-blue-600 hover:underline">Invoice</a>
-                        )}
-                        {inv.paymentProofPath && (
-                          <a href={`/api/files/${inv.paymentProofPath}`} target="_blank" rel="noopener" className="text-xs text-green-600 hover:underline">Proof</a>
-                        )}
+          <div className="space-y-3">
+            {invoices.map((inv: {
+              id: string; invoiceNumber: string; invoiceType: string;
+              amount: number; gstAmount: number; totalAmount: number;
+              paymentStatus: string; paidAmount: number;
+              invoiceFilePath: string | null; paymentProofPath: string | null;
+              vendor: { name: string }; invoiceDate: string;
+            }) => {
+              const typeBadge = inv.invoiceType === "PROVISIONAL" ? "badge badge-provisional" :
+                               inv.invoiceType === "TAX" ? "badge badge-tax" : "badge badge-material";
+              const payBadge  = inv.paymentStatus === "PAID" ? "badge badge-paid" :
+                               inv.paymentStatus === "PARTIAL" ? "badge badge-partial" : "badge badge-unpaid";
+              return (
+                <div key={inv.id} className="border border-slate-200 rounded-xl p-4 bg-white hover:bg-slate-50 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-sm font-bold text-slate-900">{inv.invoiceNumber}</span>
+                        <span className={typeBadge}>{inv.invoiceType}</span>
+                        <span className={payBadge}>{inv.paymentStatus}</span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <div className="text-sm text-slate-500">
+                        {inv.vendor.name} · {formatDate(inv.invoiceDate)}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-slate-500">Amount: <span className="font-semibold text-slate-800 tabular-nums">{formatCurrency(inv.amount)}</span></span>
+                        {inv.gstAmount > 0 && <span className="text-slate-400">GST: <span className="tabular-nums">{formatCurrency(inv.gstAmount)}</span></span>}
+                        <span className="font-bold text-slate-900 tabular-nums">Total: {formatCurrency(inv.totalAmount)}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5 items-end flex-shrink-0">
+                      {inv.invoiceFilePath && (
+                        <a
+                          href={`/api/files/${inv.invoiceFilePath}`}
+                          target="_blank" rel="noopener"
+                          className="text-xs text-blue-600 hover:underline font-medium"
+                        >
+                          👁 View Invoice
+                        </a>
+                      )}
+                      {inv.paymentProofPath && (
+                        <a
+                          href={`/api/files/${inv.paymentProofPath}`}
+                          target="_blank" rel="noopener"
+                          className="text-xs text-emerald-600 hover:underline font-medium"
+                        >
+                          👁 View Payment Proof
+                        </a>
+                      )}
+                      {inv.paymentStatus !== "PAID" && (
+                        <a
+                          href={`/invoices/${inv.id}/payment`}
+                          className="text-xs text-amber-600 hover:underline font-medium"
+                        >
+                          💳 Mark Paid
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Add Invoice Form */}
+      {/* Add Invoice Form — Accordion */}
       {showForm && (
-        <div className="card">
-          <h2 className="font-semibold text-slate-900 mb-5">New Invoice</h2>
+        <div className="card border-2 border-blue-200 reject-inline">
+          <h2 className="font-semibold text-slate-900 mb-5 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">{invoices.length + 1}</span>
+            Add New Invoice
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Vendor */}
             <div>
@@ -181,27 +238,27 @@ export default function ProcurementPage() {
                 <div className="flex-1 relative">
                   <button type="button" onClick={() => setVendorDropdownOpen(!vendorDropdownOpen)}
                     className="form-input text-left flex items-center justify-between w-full">
-                    <span className={selectedVendor ? "text-slate-900" : "text-slate-400"}>
+                    <span className={selectedVendor ? "text-slate-900 font-medium" : "text-slate-400"}>
                       {selectedVendor?.name || "Select vendor..."}
                     </span>
                     {vendorDropdownOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                   </button>
                   {vendorDropdownOpen && (
-                    <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      <div className="p-2 border-b border-slate-100">
+                    <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+                      <div className="p-2 border-b border-slate-100 sticky top-0 bg-white">
                         <input value={vendorSearch} onChange={(e) => setVendorSearch(e.target.value)} className="form-input text-sm" placeholder="Search vendors..." autoFocus />
                       </div>
                       {filteredVendors.map((v) => (
                         <button key={v.id} type="button" onClick={() => { setSelectedVendor(v); setVendorDropdownOpen(false); setVendorSearch(""); }}
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50">
-                          <div className="font-medium">{v.name}</div>
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-blue-50 transition-colors">
+                          <div className="font-semibold text-slate-900">{v.name}</div>
                           {v.phone && <div className="text-xs text-slate-400">{v.phone}</div>}
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                <button type="button" onClick={() => setShowVendorSheet(true)} className="btn-secondary text-sm whitespace-nowrap">+ New Vendor</button>
+                <button type="button" onClick={() => setShowVendorSheet(true)} className="btn-secondary text-sm whitespace-nowrap">+ New</button>
               </div>
             </div>
 
@@ -240,7 +297,7 @@ export default function ProcurementPage() {
               </div>
               <div>
                 <label className="form-label">Amount</label>
-                <div className="form-input bg-slate-50 cursor-default">{formatCurrency(amount)}</div>
+                <div className="form-input bg-slate-50 text-slate-700 font-semibold tabular-nums">{formatCurrency(amount)}</div>
               </div>
               <div>
                 <label className="form-label">GST Amount</label>
@@ -248,41 +305,47 @@ export default function ProcurementPage() {
               </div>
             </div>
 
-            <div className="bg-blue-50 rounded-lg p-3 flex items-center justify-between">
-              <span className="text-sm text-slate-600">Total Amount</span>
-              <span className="text-xl font-bold text-blue-700">{formatCurrency(totalAmount)}</span>
+            <div className="amount-display flex items-center justify-between">
+              <span className="text-sm text-blue-700 font-semibold">Total Amount</span>
+              <span className="text-2xl font-bold text-blue-700 tabular-nums">{formatCurrency(totalAmount)}</span>
             </div>
 
-            {/* File upload */}
+            {/* Drag-and-drop upload zone */}
             <div>
-              <label className="form-label">Invoice File (PDF/JPG/PNG, max 10MB)</label>
-              <div className={`border-2 border-dashed rounded-lg p-5 text-center transition-colors ${invoiceFile ? "border-blue-300 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}>
+              <label className="form-label">Invoice File <span className="text-slate-400 font-normal">(PDF/JPG/PNG, max 10MB)</span></label>
+              <label className={`upload-zone block relative ${invoiceFile ? "drag-over" : ""}`}>
                 {invoiceFile ? (
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-sm font-medium text-slate-700">{invoiceFile.name}</span>
-                    <button type="button" onClick={() => setInvoiceFile(null)} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+                    <span className="text-sm font-semibold text-blue-700">📄 {invoiceFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); setInvoiceFile(null); }}
+                      className="text-red-400 hover:text-red-600 ml-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 ) : (
                   <>
-                    <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-500">Click to upload or drag and drop</p>
-                    <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG up to 10MB</p>
+                    <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-slate-500">📎 Drag & drop invoice here</p>
+                    <p className="text-xs text-slate-400 mt-1">or <span className="text-blue-600 underline">click to upload</span> · PDF, JPG, PNG — max 10MB</p>
                   </>
                 )}
                 <input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
+                  capture="environment"
                   onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)}
-                  className={invoiceFile ? "hidden" : "absolute inset-0 opacity-0 cursor-pointer"}
-                  style={invoiceFile ? { display: "none" } : { position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-              </div>
+              </label>
             </div>
 
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
               <button type="submit" disabled={isSubmitting} className="btn-primary">
-                {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : "Save Invoice"}
+                {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : "Submit Invoice"}
               </button>
             </div>
           </form>

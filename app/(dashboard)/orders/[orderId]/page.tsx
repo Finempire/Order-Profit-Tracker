@@ -61,7 +61,23 @@ export default function OrderDetailPage() {
   });
 
   if (isLoading) {
-    return <div className="p-6 space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-slate-100 animate-pulse" />)}</div>;
+    return (
+      <div className="p-4 lg:p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="skeleton w-8 h-8 rounded-lg" />
+          <div className="space-y-1.5">
+            <div className="skeleton skeleton-title w-40" />
+            <div className="skeleton skeleton-text w-28" />
+          </div>
+        </div>
+        <div className="flex gap-1 border-b border-slate-200">
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton skeleton-text w-24 mx-2 mb-2" />)}
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton skeleton-kpi" />)}
+        </div>
+      </div>
+    );
   }
 
   const order = orderData?.data;
@@ -173,54 +189,118 @@ export default function OrderDetailPage() {
       )}
 
       {activeTab === "Cost Breakdown" && canViewCost && (
-        <div className="space-y-6">
-          {cost && (
+        <div className="space-y-5">
+          {cost ? (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <CostCard label="Order Value" value={cost.orderValue} />
-                <CostCard label="Estimated Cost" value={cost.estimatedCost} />
-                <CostCard label="Invoiced Cost" value={cost.invoicedCost} variant={cost.costVariance > 0 ? "danger" : "success"} />
-                <CostCard label="Paid Amount" value={cost.paidAmount} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <CostCard label="Pending Payment" value={cost.pendingPayment} variant={cost.pendingPayment > 0 ? "warning" : "success"} />
-                <CostCard label="Cost Variance" value={Math.abs(cost.costVariance)}
-                  variant={cost.costVariance > 0 ? "danger" : "success"}
-                  showVariance variancePct={cost.costVariancePercent}
-                  variance={cost.costVariance}
-                />
-              </div>
+              {/* 4-Column Executive Summary */}
               <div className="card">
-                <h3 className="font-semibold text-slate-900 mb-3">Item-Level Breakdown</h3>
-                <div className="table-wrapper">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Cost Health Summary</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label: "Order Value",   value: cost.orderValue,    color: "text-slate-900" },
+                    { label: "Est. Cost",      value: cost.estimatedCost, color: "text-slate-900" },
+                    { label: "Actual Invoiced",value: cost.invoicedCost,  color: cost.costVariance > 0 ? "text-red-600" : "text-emerald-700" },
+                    { label: "Variance",       value: cost.costVariance,  color: cost.costVariance > 0 ? "text-red-600" : "text-emerald-700", isVariance: true },
+                  ].map(({ label, value, color, isVariance }) => (
+                    <div key={label} className="text-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+                      <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">{label}</div>
+                      <div className={`text-xl font-bold tabular-nums ${color}`}>
+                        {isVariance && value > 0 ? "+" : ""}{formatCurrency(value)}
+                      </div>
+                      {isVariance && (
+                        <div className={`text-xs font-medium mt-0.5 ${cost.costVariance > 0 ? "text-red-500" : "text-emerald-600"}`}>
+                          {cost.costVariance > 0 ? "▲" : "▼"} {Math.abs(cost.costVariancePercent).toFixed(1)}%
+                          {cost.costVariance > 0 ? " over" : " saved"}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Tracker */}
+              <div className="card">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-slate-900">Payment Tracker</h3>
+                  <span className="text-xs text-slate-400">
+                    Paid <span className="font-bold text-slate-700 tabular-nums">{formatCurrency(cost.paidAmount)}</span>
+                    {" / "}
+                    <span className="tabular-nums">{formatCurrency(cost.invoicedCost)}</span>
+                  </span>
+                </div>
+                <div className="cost-bar-wrap h-3 mb-2">
+                  <div
+                    className="cost-bar-fill cost-bar-green"
+                    style={{ width: cost.invoicedCost > 0 ? `${Math.min((cost.paidAmount / cost.invoicedCost) * 100, 100)}%` : "0%" }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span className="text-emerald-600 font-semibold">Paid: {formatCurrency(cost.paidAmount)}</span>
+                  {cost.pendingPayment > 0 && (
+                    <span className="text-amber-600 font-semibold">Outstanding: {formatCurrency(cost.pendingPayment)}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Item-Level Breakdown */}
+              <div className="card p-0">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h3 className="text-sm font-semibold text-slate-900">Item-Level Breakdown</h3>
+                </div>
+                <div className="table-wrapper border-none rounded-none">
                   <table className="data-table">
                     <thead>
-                      <tr><th>Item</th><th>Est. Cost</th><th>Invoiced</th><th>Paid</th><th>Variance</th><th>%</th></tr>
+                      <tr>
+                        <th>Item</th>
+                        <th>Est. Cost</th>
+                        <th>Invoiced</th>
+                        <th>Paid</th>
+                        <th>Variance</th>
+                        <th>% Used</th>
+                        <th>Payment</th>
+                      </tr>
                     </thead>
                     <tbody>
-                      {cost.itemBreakdown.map((item: { itemId: string; itemName: string; estimatedCost: number; invoicedCost: number; paidAmount: number; variance: number; variancePct: number }) => (
-                        <tr key={item.itemId}>
-                          <td className="font-medium">{item.itemName}</td>
-                          <td>{formatCurrency(item.estimatedCost)}</td>
-                          <td>{formatCurrency(item.invoicedCost)}</td>
-                          <td>{formatCurrency(item.paidAmount)}</td>
-                          <td>
-                            <span className={`font-medium text-sm ${item.variance > 0 ? "text-red-600" : item.variance < 0 ? "text-green-600" : "text-slate-400"}`}>
-                              {item.variance > 0 ? "+" : ""}{formatCurrency(item.variance)}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`text-xs font-medium ${item.variancePct > 0 ? "text-red-600" : item.variancePct < 0 ? "text-green-600" : "text-slate-400"}`}>
-                              {item.variancePct > 0 ? "+" : ""}{item.variancePct.toFixed(1)}%
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {cost.itemBreakdown.map((item: {
+                        itemId: string; itemName: string; estimatedCost: number;
+                        invoicedCost: number; paidAmount: number; variance: number; variancePct: number;
+                      }) => {
+                        // % of estimated cost used
+                        const pctUsed = item.estimatedCost > 0 ? Math.round((item.invoicedCost / item.estimatedCost) * 100) : 0;
+                        const pctColor = pctUsed <= 95 ? "text-emerald-600 bg-emerald-50" : pctUsed <= 105 ? "text-amber-700 bg-amber-50" : "text-red-600 bg-red-50";
+                        const isOverrun = item.invoicedCost > item.estimatedCost;
+                        const payPct = item.invoicedCost > 0 ? Math.round((item.paidAmount / item.invoicedCost) * 100) : 0;
+                        const payStatus = payPct >= 100 ? "Paid" : payPct > 0 ? "Partial" : "Unpaid";
+                        const payColor = payPct >= 100 ? "badge badge-paid" : payPct > 0 ? "badge badge-partial" : "badge badge-unpaid";
+                        return (
+                          <tr key={item.itemId} className={isOverrun ? "row-overrun" : ""}>
+                            <td className="font-semibold text-slate-900">{item.itemName}</td>
+                            <td className="num">{formatCurrency(item.estimatedCost)}</td>
+                            <td className={`num font-semibold ${isOverrun ? "text-red-600" : "text-slate-700"}`}>{formatCurrency(item.invoicedCost)}</td>
+                            <td className="num">{formatCurrency(item.paidAmount)}</td>
+                            <td className="num">
+                              <span className={isOverrun ? "text-red-600 font-semibold" : item.variance < 0 ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                                {item.variance > 0 ? "+" : ""}{formatCurrency(item.variance)}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${pctColor}`}>
+                                {pctUsed}%
+                              </span>
+                            </td>
+                            <td>
+                              <span className={payColor}>{payStatus}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
             </>
+          ) : (
+            <div className="card text-center py-10 text-slate-400 text-sm">Loading cost data...</div>
           )}
         </div>
       )}
