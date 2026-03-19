@@ -4,7 +4,7 @@ module.exports = {
       name: "manufacturing-app",
       script: "node_modules/.bin/next",
       args: "start",
-      cwd: "/var/www/manufacturing-app",
+      cwd: "/var/www/order-profit-tracker",
       instances: 1,
       exec_mode: "fork",
       env: {
