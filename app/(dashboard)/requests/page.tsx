@@ -5,7 +5,7 @@ import { useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RejectModal } from "@/components/shared/RejectModal";
-import { Plus, Search, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";

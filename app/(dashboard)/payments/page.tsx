@@ -7,7 +7,7 @@ import Link from "next/link";
 import { DollarSign } from "lucide-react";
 
 export default function PaymentsPage() {
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["payments"],
     queryFn: () =>
       fetch("/api/invoices?limit=100").then((r) => r.json()),

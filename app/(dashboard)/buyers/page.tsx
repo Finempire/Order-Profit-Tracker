@@ -15,7 +15,7 @@ export default function BuyersPage() {
   const [showForm, setShowForm] = useState(false);
   const limit = 20;
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["buyers", search, page],
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit), ...(search && { search }) });

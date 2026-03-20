@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   LayoutDashboard, Package, Users, Building2, ClipboardList,
   FileText, CreditCard, BarChart3, Settings, LogOut, Factory,
@@ -36,12 +36,10 @@ export function Sidebar({ onClose }: SidebarProps) {
   const { data: session } = useSession();
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("sidebar-collapsed");
-    if (stored === "true") setCollapsed(true);
-  }, []);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sidebar-collapsed") === "true";
+  });
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {

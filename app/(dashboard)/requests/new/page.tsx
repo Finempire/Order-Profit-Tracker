@@ -84,7 +84,7 @@ export default function NewRequestPage() {
           <h2 className="text-xl font-bold text-slate-900 mb-1">Request Submitted!</h2>
           <p className="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg mb-3">{submitted}</p>
           <p className="text-slate-500 text-sm max-w-xs mb-6">
-            Your request is pending approval from management. You'll see it in My Requests.
+            Your request is pending approval from management. You&apos;ll see it in My Requests.
           </p>
           <div className="flex flex-col gap-2 w-full">
             <Link href="/requests" className="btn-primary justify-center w-full py-3">

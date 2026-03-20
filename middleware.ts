@@ -1,6 +1,10 @@
+import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth.config";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+
+// Use the lightweight auth config (no bcryptjs) for the Edge runtime middleware
+const { auth } = NextAuth(authConfig);
 
 const ROLE_ROUTES: Record<string, string[]> = {
   "/dashboard": ["ADMIN", "CEO", "ACCOUNTANT"],
