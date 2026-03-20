@@ -9,9 +9,8 @@ on:
 jobs:
 
   ci:
-    name: Lint, Type-check, Build
+    name: CI - Lint, Type-check, Build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,8 +18,8 @@ jobs:
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -37,20 +36,15 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
-          NEXTAUTH_SECRET: "ci-placeholder-secret-not-used-at-runtime"
-          NEXTAUTH_URL: "http://localhost:3000"
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          NEXTAUTH_SECRET: ci-placeholder-secret
+          NEXTAUTH_URL: http://localhost:3000
 
   deploy:
     name: Deploy to Linode
     runs-on: ubuntu-latest
     needs: ci
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-
-    environment:
-      name: production
-      url: ${{ secrets.APP_URL }}
-
+    if: "github.ref == 'refs/heads/master' && github.event_name == 'push'"
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -59,15 +53,5 @@ jobs:
           username: ${{ secrets.LINODE_USER }}
           key: ${{ secrets.LINODE_SSH_KEY }}
           port: 22
-          command_timeout: "10m"
-          script: |
-            set -euo pipefail
-            bash /var/www/order-profit-tracker/scripts/deploy.sh
-
-      - name: Notify success
-        if: success()
-        run: echo "Deployed successfully to ${{ secrets.APP_URL }}"
-
-      - name: Notify failure
-        if: failure()
-        run: echo "Deployment failed - check logs with: pm2 logs manufacturing-app --lines 50"
+          command_timeout: 10m
+          script: bash /var/www/order-profit-tracker/scripts/deploy.sh
