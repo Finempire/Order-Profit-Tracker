@@ -62,6 +62,7 @@ export async function GET(request: Request) {
       shippingDate: order.shippingDate,
       buyer: order.buyer,
       status: order.status,
+      items: order.items.map((i) => ({ id: i.id, itemName: i.itemName })),
       orderValue,
       estimatedCost,
       invoicedCost,
