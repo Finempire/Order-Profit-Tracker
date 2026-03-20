@@ -4,8 +4,8 @@ import { Toaster } from "sonner";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "ManufacturePro — Order Management System",
-  description: "Manufacturing order lifecycle management: orders, procurement, invoices, and payments.",
+  title: "Order Profit Tracker",
+  description: "Order profit and procurement tracking: orders, purchase requests, invoices, and payments.",
 };
 
 export default function RootLayout({

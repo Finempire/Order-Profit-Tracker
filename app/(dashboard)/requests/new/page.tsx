@@ -44,7 +44,7 @@ export default function NewRequestPage() {
     formState: { errors }, trigger,
   } = useForm<RequestFormValues>({
     resolver: zodResolver(requestSchema),
-    defaultValues: { qty: 0, rate: 0, requestType: "MATERIAL" },
+    defaultValues: { qty: 0, rate: 0, requestType: "MATERIAL", orderId: "", orderItemId: "", description: "" },
   });
 
   const qty  = watch("qty");
@@ -224,7 +224,7 @@ export default function NewRequestPage() {
                         }`}
                       >
                         <Icon className="w-4 h-4" />
-                        {type === "MATERIAL" ? "🧵 Material" : "💰 Expense"}
+                        {type === "MATERIAL" ? "Material" : "Expense"}
                       </button>
                     );
                   })}
@@ -317,7 +317,7 @@ export default function NewRequestPage() {
                 <button type="submit" disabled={createRequest.isPending} className="btn-primary flex-2 flex-1 justify-center py-3 text-base">
                   {createRequest.isPending
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
-                    : "✅ Submit Request"}
+                    : "Submit Request"}
                 </button>
               </div>
             </div>

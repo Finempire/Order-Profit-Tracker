@@ -63,8 +63,8 @@ export default function LoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg mb-4">
             <Factory className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">ManufacturePro</h1>
-          <p className="text-slate-500 text-sm mt-1">Order Management System</p>
+          <h1 className="text-2xl font-bold text-slate-900">Order Profit Tracker</h1>
+          <p className="text-slate-500 text-sm mt-1">Order Profit Management</p>
         </div>
 
         {/* Card */}

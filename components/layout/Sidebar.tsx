@@ -71,7 +71,7 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
             {!collapsed && (
               <span className="font-bold text-sidebar-foreground text-sm tracking-tight truncate">
-                ManufacturePro
+                Order Profit Tracker
               </span>
             )}
           </Link>
