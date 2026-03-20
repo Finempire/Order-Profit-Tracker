@@ -1,18 +1,15 @@
 name: CI / Deploy to Linode
 
-# ── Triggers ──────────────────────────────────────────────────
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
 
-# ── Jobs ──────────────────────────────────────────────────────
 jobs:
 
-  # ── 1. CI Gate: Lint + Type-check + Build ──────────────────
   ci:
-    name: Lint · Type-check · Build
+    name: Lint, Type-check, Build
     runs-on: ubuntu-latest
 
     steps:
@@ -40,13 +37,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Placeholder values — build bundles code, does not connect to DB
           DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
           NEXTAUTH_SECRET: "ci-placeholder-secret-not-used-at-runtime"
           NEXTAUTH_URL: "http://localhost:3000"
 
-  # ── 2. Deploy: SSH into Linode and run deploy script ───────
-  #    Only on push to master (not PRs) AND only if CI passes
   deploy:
     name: Deploy to Linode
     runs-on: ubuntu-latest
@@ -72,8 +66,8 @@ jobs:
 
       - name: Notify success
         if: success()
-        run: echo "✅ Deployed to ${{ secrets.APP_URL }}"
+        run: echo "Deployed successfully to ${{ secrets.APP_URL }}"
 
       - name: Notify failure
         if: failure()
-        run: echo "❌ Deployment failed — check logs with: pm2 logs manufacturing-app --lines 50"
+        run: echo "Deployment failed - check logs with: pm2 logs manufacturing-app --lines 50"
