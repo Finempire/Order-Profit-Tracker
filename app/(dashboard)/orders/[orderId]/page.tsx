@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { CostCard } from "@/components/shared/CostCard";
 import { RejectModal } from "@/components/shared/RejectModal";
 import { ArrowLeft, Check, X, ExternalLink } from "lucide-react";
 import Link from "next/link";

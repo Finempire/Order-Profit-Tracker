@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -24,7 +23,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function ChangePasswordPage() {
-  const router = useRouter();
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

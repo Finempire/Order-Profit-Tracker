@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { VendorForm } from "@/components/forms/VendorForm";
 import { ArrowLeft, Loader2, Upload, ChevronDown, ChevronUp, X } from "lucide-react";
 import { toast } from "sonner";
@@ -43,11 +42,6 @@ export default function ProcurementPage() {
   const { data: requestData, isLoading } = useQuery({
     queryKey: ["request", requestId],
     queryFn: () => fetch(`/api/invoices?requestId=${requestId}&limit=50`).then((r) => r.json()),
-  });
-
-  const { data: reqDetail } = useQuery({
-    queryKey: ["request-detail", requestId],
-    queryFn: () => fetch(`/api/requests?limit=1`).then((r) => r.json()),
   });
 
   const { data: vendorsData } = useQuery({

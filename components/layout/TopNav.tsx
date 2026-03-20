@@ -1,6 +1,7 @@
 "use client";
 
-import { Menu, Bell, LogOut, User, Settings } from "lucide-react";
+import { Menu, Bell, LogOut, Settings } from "lucide-react";
+import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -77,10 +78,10 @@ export function TopNav({ onMenuClick }: TopNavProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <a href="/settings" className="cursor-pointer">
+                <Link href="/settings" className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
-                </a>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

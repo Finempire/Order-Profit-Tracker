@@ -89,7 +89,7 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rejectionNote: note }),
       }).then((r) => r.json()),
-    onSuccess: (res, { id }) => {
+    onSuccess: (res) => {
       if (res.success) {
         toast.success("Request rejected");
         setRejectOpenId(null);
