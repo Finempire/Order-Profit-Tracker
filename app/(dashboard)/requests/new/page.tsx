@@ -198,7 +198,7 @@ export default function NewRequestPage() {
                   <label className="form-label">Related Item <span className="text-slate-400 font-normal">(optional)</span></label>
                   <select {...register("orderItemId")} className="form-input">
                     <option value="">— Not linked to specific item —</option>
-                    {selectedOrder.items.map((item) => (
+                    {(selectedOrder.items ?? []).map((item) => (
                       <option key={item.id} value={item.id}>{item.itemName}</option>
                     ))}
                   </select>
