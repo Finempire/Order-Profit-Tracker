@@ -121,7 +121,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">
-          Manufacturing Order Management &bull; © {new Date().getFullYear()}
+          Order Profit Tracker &bull; © {new Date().getFullYear()}
         </p>
       </div>
     </div>
