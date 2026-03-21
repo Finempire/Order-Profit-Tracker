@@ -20,7 +20,6 @@ dist/
 .env.production.local
 
 # Prisma
-prisma/migrations/
 tsconfig.tsbuildinfo
 
 # Uploads

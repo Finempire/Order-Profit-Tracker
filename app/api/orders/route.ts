@@ -94,11 +94,13 @@ export async function POST(request: Request) {
       return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
     }
 
-    const { orderNumber, orderDate, shippingDate, buyerId, notes, items } = parsed.data;
+    const { orderNumber, orderDate, shippingDate, buyerId, notes, currency, exchangeRate, items } = parsed.data;
 
     // Check uniqueness
     const existing = await prisma.order.findUnique({ where: { orderNumber } });
     if (existing) return errorResponse("Order number already exists", 409);
+
+    const rate = currency === "INR" ? 1 : (exchangeRate ?? 1);
 
     const order = await prisma.order.create({
       data: {
@@ -107,13 +109,16 @@ export async function POST(request: Request) {
         shippingDate: shippingDate ?? null,
         buyerId,
         notes,
+        currency: currency ?? "INR",
+        exchangeRate: rate,
         items: {
           create: items.map((item) => ({
             itemName: item.itemName,
             description: item.description,
             qty: item.qty,
             rate: item.rate,
-            amount: item.qty * item.rate,
+            discount: item.discount ?? 0,
+            amount: (item.qty * item.rate - (item.discount ?? 0)) * rate,
           })),
         },
       },
