@@ -10,8 +10,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
+import { JobCostTab } from "@/components/order/JobCostTab";
 
-const TABS = ["Overview", "Cost Breakdown", "Requests", "Invoices"] as const;
+const TABS = ["Overview", "Cost Breakdown", "Job Cost Sheet", "Requests", "Invoices"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function OrderDetailPage() {
@@ -104,8 +105,8 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-slate-200">
-        {TABS.filter((t) => t !== "Cost Breakdown" || canViewCost).map((tab) => (
+      <div className="flex gap-0 border-b border-slate-200 overflow-x-auto">
+        {TABS.filter((t) => (t !== "Cost Breakdown" && t !== "Job Cost Sheet") || canViewCost).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -302,6 +303,13 @@ export default function OrderDetailPage() {
             <div className="card text-center py-10 text-slate-400 text-sm">Loading cost data...</div>
           )}
         </div>
+      )}
+
+      {activeTab === "Job Cost Sheet" && canViewCost && (
+        <JobCostTab
+          orderId={orderId}
+          orderValue={order.items.reduce((s: number, i: { amount: number }) => s + i.amount, 0)}
+        />
       )}
 
       {activeTab === "Requests" && (

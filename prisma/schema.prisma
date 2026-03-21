@@ -80,8 +80,9 @@ model Order {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  items    OrderItem[]
-  requests PurchaseRequest[]
+  items        OrderItem[]
+  requests     PurchaseRequest[]
+  jobCostSheet JobCostSheet?
 }
 
 model OrderItem {
@@ -162,4 +163,64 @@ model VendorInvoice {
   updatedAt        DateTime      @updatedAt
 
   @@unique([vendorId, invoiceNumber])
+}
+
+// ─── Job Costing Module ───────────────────────────────────────────────────────
+
+model JobCostSheet {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  unitsProduced   Float    @default(0)
+  standardCost    Float    @default(0)   // total budgeted cost
+  budgetedRevenue Float    @default(0)   // expected selling value
+  targetPrice     Float?                  // competitive market price (target costing)
+  desiredProfit   Float?                  // desired profit margin
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  materials MaterialCostEntry[]
+  labour    LabourCostEntry[]
+  overheads OverheadCostEntry[]
+}
+
+model MaterialCostEntry {
+  id              String       @id @default(cuid())
+  sheetId         String
+  sheet           JobCostSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  materialName    String
+  qty             Float
+  unitCost        Float
+  valuationMethod String       @default("FIFO") // FIFO | LIFO
+  totalCost       Float
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model LabourCostEntry {
+  id          String       @id @default(cuid())
+  sheetId     String
+  sheet       JobCostSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  workerName  String
+  method      String       @default("TIME_RATE") // TIME_RATE | PIECE_RATE
+  hours       Float?       // TIME_RATE
+  ratePerHour Float?       // TIME_RATE
+  units       Float?       // PIECE_RATE
+  ratePerUnit Float?       // PIECE_RATE
+  totalCost   Float
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model OverheadCostEntry {
+  id                 String       @id @default(cuid())
+  sheetId            String
+  sheet              JobCostSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  name               String
+  type               String       @default("FIXED")  // FIXED | VARIABLE
+  totalAmount        Float
+  apportionmentBasis String       @default("MANUAL") // FLOOR_SPACE | MACHINE_HOURS | DIRECT_LABOUR | MANUAL
+  orderShare         Float        // apportioned amount for this order
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 }
