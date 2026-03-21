@@ -6,8 +6,8 @@ import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import {
   LayoutDashboard, Package, Users, Building2, ClipboardList,
-  FileText, CreditCard, BarChart3, Settings, LogOut, Factory,
-  X, ChevronLeft, ChevronRight, Plus,
+  FileText, CreditCard, BarChart3, Settings, LogOut,
+  X, ChevronLeft, ChevronRight, Plus, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/Logo";
 
 const navItems = [
   { href: "/dashboard",  label: "Dashboard",        icon: LayoutDashboard, roles: ["ADMIN", "CEO", "ACCOUNTANT"] },
@@ -66,13 +67,12 @@ export function Sidebar({ onClose }: SidebarProps) {
         {/* ── Header ────────────────────────────── */}
         <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border min-h-[56px]">
           <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
-              <Factory className="w-4 h-4 text-primary-foreground" />
-            </div>
-            {!collapsed && (
-              <span className="font-bold text-sidebar-foreground text-sm tracking-tight truncate">
-                Order Profit Tracker
-              </span>
+            {collapsed ? (
+              <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <Activity className="w-4 h-4 text-white" strokeWidth={1.8} />
+              </div>
+            ) : (
+              <Logo size="sm" />
             )}
           </Link>
 
