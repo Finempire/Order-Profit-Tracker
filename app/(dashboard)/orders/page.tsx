@@ -50,7 +50,8 @@ export default function OrdersPage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
   const canCreate = ["ADMIN", "CEO", "ACCOUNTANT"].includes(role || "");
-
+  const isProduction = role === "PRODUCTION";
+  const colCount = isProduction ? 4 : 9;
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage]   = useState(1);
@@ -121,10 +122,7 @@ export default function OrdersPage() {
                 <th>Order No.</th>
                 <th>Order Date</th>
                 <th>Buyer</th>
-                <th>Order Value</th>
-                <th>Est. Cost</th>
-                <th>Invoiced</th>
-                <th>Cost Health</th>
+                {!isProduction && <><th>Order Value</th><th>Est. Cost</th><th>Invoiced</th><th>Cost Health</th></>}
                 <th>Status</th>
                 <th></th>
               </tr>
@@ -133,16 +131,14 @@ export default function OrdersPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(9)].map((_, j) => (
-                      <td key={j}>
-                        <div className="skeleton skeleton-text w-20" />
-                      </td>
+                    {[...Array(colCount)].map((_, j) => (
+                      <td key={j}><div className="skeleton skeleton-text w-20" /></td>
                     ))}
                   </tr>
                 ))
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={9}>
+                  <td colSpan={colCount}>
                     {search || status ? (
                       <EmptyState variant="search" searchTerm={search || status} />
                     ) : (
@@ -156,7 +152,7 @@ export default function OrdersPage() {
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order.id} className={order.invoicedCost > order.estimatedCost && order.estimatedCost > 0 ? "row-overrun" : ""}>
+                  <tr key={order.id} className={!isProduction && order.invoicedCost > order.estimatedCost && order.estimatedCost > 0 ? "row-overrun" : ""}>
                     <td>
                       <Link href={`/orders/${order.id}`} className="font-mono text-xs font-semibold text-blue-600 hover:underline">
                         {order.orderNumber}
@@ -164,14 +160,16 @@ export default function OrdersPage() {
                     </td>
                     <td className="text-sm text-slate-500">{formatDate(order.orderDate)}</td>
                     <td className="font-medium text-slate-900">{order.buyer.name}</td>
-                    <td className="num">{formatCurrency(order.orderValue)}</td>
-                    <td className="num text-slate-500">{formatCurrency(order.estimatedCost)}</td>
-                    <td className={`num font-semibold ${order.invoicedCost > order.estimatedCost && order.estimatedCost > 0 ? "text-red-600" : "text-slate-700"}`}>
-                      {formatCurrency(order.invoicedCost)}
-                    </td>
-                    <td>
-                      <CostHealthBar estimated={order.estimatedCost} invoiced={order.invoicedCost} />
-                    </td>
+                    {!isProduction && (
+                      <>
+                        <td className="num">{formatCurrency(order.orderValue)}</td>
+                        <td className="num text-slate-500">{formatCurrency(order.estimatedCost)}</td>
+                        <td className={`num font-semibold ${order.invoicedCost > order.estimatedCost && order.estimatedCost > 0 ? "text-red-600" : "text-slate-700"}`}>
+                          {formatCurrency(order.invoicedCost)}
+                        </td>
+                        <td><CostHealthBar estimated={order.estimatedCost} invoiced={order.invoicedCost} /></td>
+                      </>
+                    )}
                     <td><StatusBadge status={order.status} /></td>
                     <td>
                       <Link href={`/orders/${order.id}`} className="text-xs text-blue-600 hover:underline font-medium">
@@ -225,11 +223,15 @@ export default function OrdersPage() {
                 <StatusBadge status={order.status} />
               </div>
               <div className="text-sm font-medium text-slate-800">{order.buyer.name}</div>
-              <div className="flex justify-between text-xs text-slate-500 mt-0.5">
-                <span>Value: <span className="tabular-nums font-medium">{formatCurrency(order.orderValue)}</span></span>
-                <span>Invoiced: <span className={`tabular-nums font-medium ${order.invoicedCost > order.estimatedCost ? "text-red-600" : ""}`}>{formatCurrency(order.invoicedCost)}</span></span>
-              </div>
-              <CostHealthBar estimated={order.estimatedCost} invoiced={order.invoicedCost} />
+              {!isProduction && (
+                <>
+                  <div className="flex justify-between text-xs text-slate-500 mt-0.5">
+                    <span>Value: <span className="tabular-nums font-medium">{formatCurrency(order.orderValue)}</span></span>
+                    <span>Invoiced: <span className={`tabular-nums font-medium ${order.invoicedCost > order.estimatedCost ? "text-red-600" : ""}`}>{formatCurrency(order.invoicedCost)}</span></span>
+                  </div>
+                  <CostHealthBar estimated={order.estimatedCost} invoiced={order.invoicedCost} />
+                </>
+              )}
               <div className="text-xs text-slate-400">{formatDate(order.orderDate)}</div>
             </Link>
           ))
