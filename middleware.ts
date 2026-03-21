@@ -53,6 +53,10 @@ export default auth((req) => {
   for (const [prefix, allowedRoles] of Object.entries(ROLE_ROUTES)) {
     if (pathname.startsWith(prefix)) {
       if (!allowedRoles.includes(role || "")) {
+        // PRODUCTION users landing on /dashboard after login → send to their home
+        if (pathname.startsWith("/dashboard") && role === "PRODUCTION") {
+          return NextResponse.redirect(new URL("/requests", nextUrl.origin));
+        }
         return NextResponse.redirect(new URL("/unauthorized", nextUrl.origin));
       }
       break;
