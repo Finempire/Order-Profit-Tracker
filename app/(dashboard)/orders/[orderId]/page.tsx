@@ -164,7 +164,10 @@ export default function OrderDetailPage() {
             <div className="table-wrapper">
               <table className="data-table">
                 <thead>
-                  <tr><th>#</th><th>Item Name</th><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+                  <tr>
+                    <th>#</th><th>Item Name</th><th>Description</th><th>Qty</th>
+                    {role !== "PRODUCTION" && <><th>Rate</th><th>Amount</th></>}
+                  </tr>
                 </thead>
                 <tbody>
                   {order.items.map((item: { id: string; itemName: string; description: string | null; qty: number; rate: number; amount: number }, idx: number) => (
@@ -173,14 +176,20 @@ export default function OrderDetailPage() {
                       <td className="font-medium">{item.itemName}</td>
                       <td className="text-slate-500 text-sm">{item.description || "—"}</td>
                       <td>{item.qty}</td>
-                      <td>{formatCurrency(item.rate)}</td>
-                      <td className="font-semibold">{formatCurrency(item.amount)}</td>
+                      {role !== "PRODUCTION" && (
+                        <>
+                          <td>{formatCurrency(item.rate)}</td>
+                          <td className="font-semibold">{formatCurrency(item.amount)}</td>
+                        </>
+                      )}
                     </tr>
                   ))}
-                  <tr>
-                    <td colSpan={5} className="text-right font-semibold text-slate-700 pr-4">Total</td>
-                    <td className="font-bold text-lg">{formatCurrency(order.items.reduce((s: number, i: { amount: number }) => s + i.amount, 0))}</td>
-                  </tr>
+                  {role !== "PRODUCTION" && (
+                    <tr>
+                      <td colSpan={5} className="text-right font-semibold text-slate-700 pr-4">Total</td>
+                      <td className="font-bold text-lg">{formatCurrency(order.items.reduce((s: number, i: { amount: number }) => s + i.amount, 0))}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
