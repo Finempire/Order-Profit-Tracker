@@ -74,6 +74,8 @@ model Order {
   buyerId      String
   buyer        Buyer     @relation(fields: [buyerId], references: [id])
   notes        String?
+  currency     String    @default("INR")
+  exchangeRate Float     @default(1)
   status       String    @default("ACTIVE")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -90,6 +92,7 @@ model OrderItem {
   description String?
   qty         Float
   rate        Float
+  discount    Float    @default(0)
   amount      Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
