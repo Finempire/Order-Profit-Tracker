@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, ChevronDown, ChevronUp, CheckCircle2, Scissors, Wallet } from "lucide-react";
+import {
+  ArrowLeft, Plus, Trash2, Loader2, ChevronDown, ChevronUp,
+  CheckCircle2, Scissors, Wallet, Paperclip, X, FileText,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
-import { requestSchema, type RequestFormValues } from "@/lib/validations/request";
 import Link from "next/link";
 
 interface OrderOption {
@@ -19,13 +19,40 @@ interface OrderOption {
   items: { id: string; itemName: string }[];
 }
 
-export default function NewRequestPage() {
+interface LineItem {
+  description: string;
+  qty: string;
+  unit: string;
+  rate: string;
+}
+
+const UNITS = ["pcs", "kg", "m", "m²", "m³", "L", "box", "roll", "set", "lot", "hr", "day"];
+
+function emptyItem(): LineItem {
+  return { description: "", qty: "1", unit: "pcs", rate: "" };
+}
+
+export default function NewPOPage() {
   const router = useRouter();
+
+  // Order selector
   const [orderSearch, setOrderSearch] = useState("");
   const [orderDropdownOpen, setOrderDropdownOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderOption | null>(null);
-  const [step, setStep] = useState(1);
-  const [submitted, setSubmitted] = useState<string | null>(null); // request number after success
+  const [orderItemId, setOrderItemId] = useState("");
+  const [requestType, setRequestType] = useState<"MATERIAL" | "EXPENSE">("MATERIAL");
+  const [notes, setNotes] = useState("");
+
+  // Line items
+  const [items, setItems] = useState<LineItem[]>([emptyItem()]);
+
+  // File upload
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [attachFile, setAttachFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Success state
+  const [submitted, setSubmitted] = useState<{ number: string; id: string } | null>(null);
 
   const { data: ordersData } = useQuery({
     queryKey: ["active-orders"],
@@ -39,66 +66,110 @@ export default function NewRequestPage() {
       o.buyer.name.toLowerCase().includes(orderSearch.toLowerCase())
   );
 
-  const {
-    register, handleSubmit, watch, setValue,
-    formState: { errors }, trigger,
-  } = useForm<RequestFormValues>({
-    resolver: zodResolver(requestSchema),
-    defaultValues: { qty: 0, rate: 0, requestType: "MATERIAL", orderId: "", orderItemId: "", description: "" },
-  });
+  // Item helpers
+  const updateItem = (i: number, field: keyof LineItem, value: string) => {
+    setItems((prev) => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+  };
+  const addItem = () => setItems((prev) => [...prev, emptyItem()]);
+  const removeItem = (i: number) => setItems((prev) => prev.filter((_, idx) => idx !== i));
 
-  const qty  = watch("qty");
-  const rate = watch("rate");
-  const requestType = watch("requestType");
-  const estimatedAmount = (Number(qty) || 0) * (Number(rate) || 0);
+  const totals = items.map((item) => (Number(item.qty) || 0) * (Number(item.rate) || 0));
+  const grandTotal = totals.reduce((s, v) => s + v, 0);
 
-  const createRequest = useMutation({
-    mutationFn: (data: RequestFormValues) =>
-      fetch("/api/requests", {
+  // Upload attachment
+  const uploadFile = async (file: File): Promise<string | null> => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd }).then((r) => r.json());
+      if (res.success) return res.data.url;
+      toast.error(res.error || "Upload failed");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const createPO = useMutation({
+    mutationFn: async () => {
+      // Validate
+      if (!selectedOrder) { toast.error("Please select an order"); return null; }
+      const validItems = items.filter((i) => i.description.trim() && Number(i.qty) > 0 && Number(i.rate) >= 0);
+      if (validItems.length === 0) { toast.error("Add at least one valid line item"); return null; }
+
+      let attachmentUrl: string | undefined;
+      if (attachFile) {
+        const url = await uploadFile(attachFile);
+        if (!url) return null;
+        attachmentUrl = url;
+      }
+
+      const body = {
+        orderId: selectedOrder.id,
+        orderItemId: orderItemId || null,
+        requestType,
+        notes: notes.trim() || undefined,
+        attachmentUrl,
+        items: validItems.map((i) => ({
+          description: i.description.trim(),
+          qty: Number(i.qty),
+          unit: i.unit,
+          rate: Number(i.rate),
+        })),
+      };
+
+      return fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, qty: Number(data.qty), rate: Number(data.rate) }),
-      }).then((r) => r.json()),
+        body: JSON.stringify(body),
+      }).then((r) => r.json());
+    },
     onSuccess: (res) => {
+      if (!res) return;
       if (res.success) {
-        setSubmitted(res.data.requestNumber);
+        setSubmitted({ number: res.data.requestNumber, id: res.data.id });
       } else {
-        toast.error(res.error || "Failed to raise request");
+        toast.error(res.error || "Failed to raise PO");
       }
     },
   });
-
-  const goToStep2 = async () => {
-    const ok = await trigger(["orderId", "requestType"]);
-    if (ok && selectedOrder) setStep(2);
-  };
 
   /* ── Success Screen ─────────────────────────── */
   if (submitted) {
     return (
       <div className="p-4 lg:p-6 max-w-md mx-auto">
-        <div className="card success-screen">
-          <div className="success-check-circle">
-            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+        <div className="card text-center space-y-4 py-8">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-9 h-9 text-emerald-500" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-1">Request Submitted!</h2>
-          <p className="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg mb-3">{submitted}</p>
-          <p className="text-slate-500 text-sm max-w-xs mb-6">
-            Your request is pending approval from management. You&apos;ll see it in My Requests.
+          <h2 className="text-xl font-bold text-slate-900">Purchase Order Raised!</h2>
+          <p className="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg inline-block">
+            {submitted.number}
+          </p>
+          <p className="text-slate-500 text-sm max-w-xs mx-auto">
+            Your PO is pending approval. You can view and export it as PDF below.
           </p>
           <div className="flex flex-col gap-2 w-full">
-            <Link href="/requests" className="btn-primary justify-center w-full py-3">
-              View My Requests
+            <Link href={`/requests/${submitted.id}`} className="btn-primary justify-center w-full py-3">
+              <FileText className="w-4 h-4" /> View &amp; Export PDF
+            </Link>
+            <Link href="/requests" className="btn-secondary justify-center w-full py-2.5">
+              View All Requests
             </Link>
             <button
               onClick={() => {
                 setSubmitted(null);
-                setStep(1);
                 setSelectedOrder(null);
+                setOrderItemId("");
+                setRequestType("MATERIAL");
+                setNotes("");
+                setItems([emptyItem()]);
+                setAttachFile(null);
               }}
-              className="btn-secondary justify-center w-full py-2.5"
+              className="text-sm text-slate-500 hover:text-slate-700 py-2"
             >
-              Raise Another Request
+              Raise Another PO
             </button>
           </div>
         </div>
@@ -108,221 +179,348 @@ export default function NewRequestPage() {
 
   return (
     <div className="p-4 lg:p-6">
-      <div className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-3xl mx-auto space-y-5">
+
         {/* Header */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => step === 2 ? setStep(1) : router.back()}
+            onClick={() => router.back()}
             className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-slate-900">Raise Purchase Request</h1>
-            <p className="text-slate-400 text-sm">Step {step} of 2</p>
+            <h1 className="text-xl font-bold text-slate-900">New Purchase Order</h1>
+            <p className="text-slate-400 text-sm">Fill in the PO details and line items</p>
+          </div>
+          <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+            DRAFT
+          </span>
+        </div>
+
+        {/* PO Header Card */}
+        <div className="card space-y-5">
+          <h2 className="font-semibold text-slate-900 text-sm uppercase tracking-wide">PO Details</h2>
+
+          {/* Order selector */}
+          <div>
+            <label className="form-label">Linked Order *</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOrderDropdownOpen(!orderDropdownOpen)}
+                className="form-input text-left flex items-center justify-between w-full"
+              >
+                <span className={selectedOrder ? "text-slate-900 font-medium" : "text-slate-400"}>
+                  {selectedOrder
+                    ? `${selectedOrder.orderNumber} — ${selectedOrder.buyer.name}`
+                    : "Select active order..."}
+                </span>
+                {orderDropdownOpen
+                  ? <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+              </button>
+              {orderDropdownOpen && (
+                <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+                  <div className="p-2 border-b border-slate-100 sticky top-0 bg-white">
+                    <input
+                      value={orderSearch}
+                      onChange={(e) => setOrderSearch(e.target.value)}
+                      className="form-input text-sm"
+                      placeholder="Search orders..."
+                      autoFocus
+                    />
+                  </div>
+                  {filteredOrders.length === 0 ? (
+                    <div className="p-4 text-sm text-slate-400 text-center">No active orders found</div>
+                  ) : (
+                    filteredOrders.map((o) => (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedOrder(o);
+                          setOrderItemId("");
+                          setOrderDropdownOpen(false);
+                          setOrderSearch("");
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm hover:bg-blue-50 transition-colors"
+                      >
+                        <div className="font-semibold text-slate-900">{o.orderNumber}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{o.buyer.name}</div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Related Order Item */}
+            {selectedOrder && (
+              <div>
+                <label className="form-label">
+                  Related Item <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <select
+                  value={orderItemId}
+                  onChange={(e) => setOrderItemId(e.target.value)}
+                  className="form-input"
+                >
+                  <option value="">— Not linked to specific item —</option>
+                  {(selectedOrder.items ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>{item.itemName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Request Type */}
+            <div>
+              <label className="form-label">PO Type *</label>
+              <div className="flex gap-3">
+                {(["MATERIAL", "EXPENSE"] as const).map((type) => {
+                  const Icon = type === "MATERIAL" ? Scissors : Wallet;
+                  const isSelected = requestType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setRequestType(type)}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 border-2 rounded-xl cursor-pointer text-sm font-semibold transition-all ${
+                        isSelected
+                          ? "border-blue-600 bg-blue-600 text-white shadow-md"
+                          : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {type === "MATERIAL" ? "Material" : "Expense"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="form-label">
+              Notes / Terms <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="form-input resize-none"
+              rows={2}
+              placeholder="Delivery instructions, payment terms, special requirements..."
+            />
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="step-bar">
-          <div className="step-bar-fill" style={{ width: step === 1 ? "50%" : "100%" }} />
-        </div>
+        {/* Line Items Card */}
+        <div className="card p-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <h2 className="font-semibold text-slate-900 text-sm uppercase tracking-wide">Line Items</h2>
+            <button type="button" onClick={addItem} className="btn-secondary text-xs py-1.5 px-3">
+              <Plus className="w-3.5 h-3.5" /> Add Item
+            </button>
+          </div>
 
-        <form onSubmit={handleSubmit((data) => createRequest.mutate(data))}>
-
-          {/* ── STEP 1: Link to Order ──────────────── */}
-          {step === 1 && (
-            <div className="card space-y-5">
-              <h2 className="font-semibold text-slate-900">Step 1: Link to Order</h2>
-
-              {/* Order selector */}
-              <div>
-                <label className="form-label">Order *</label>
-                <input type="hidden" {...register("orderId")} />
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setOrderDropdownOpen(!orderDropdownOpen)}
-                    className="form-input text-left flex items-center justify-between w-full"
-                  >
-                    <span className={selectedOrder ? "text-slate-900 font-medium" : "text-slate-400"}>
-                      {selectedOrder
-                        ? `${selectedOrder.orderNumber} — ${selectedOrder.buyer.name}`
-                        : "Select active order..."}
-                    </span>
-                    {orderDropdownOpen
-                      ? <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                      : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />}
-                  </button>
-                  {orderDropdownOpen && (
-                    <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
-                      <div className="p-2 border-b border-slate-100 sticky top-0 bg-white">
-                        <input
-                          value={orderSearch}
-                          onChange={(e) => setOrderSearch(e.target.value)}
-                          className="form-input text-sm"
-                          placeholder="Search orders..."
-                          autoFocus
-                        />
-                      </div>
-                      {filteredOrders.length === 0 ? (
-                        <div className="p-4 text-sm text-slate-400 text-center">No active orders found</div>
-                      ) : (
-                        filteredOrders.map((o) => (
-                          <button
-                            key={o.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedOrder(o);
-                              setValue("orderId", o.id);
-                              setValue("orderItemId", "");
-                              setOrderDropdownOpen(false);
-                              setOrderSearch("");
-                            }}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-blue-50 transition-colors"
-                          >
-                            <div className="font-semibold text-slate-900">{o.orderNumber}</div>
-                            <div className="text-xs text-slate-400 mt-0.5">{o.buyer.name}</div>
-                          </button>
-                        ))
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide w-8">#</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description *</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide w-20">Qty *</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">Unit</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Rate (₹) *</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Amount</th>
+                  <th className="w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50">
+                    <td className="px-4 py-2 text-xs text-slate-400 text-center">{i + 1}</td>
+                    <td className="px-2 py-2">
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => updateItem(i, "description", e.target.value)}
+                        placeholder="Item description..."
+                        className="form-input text-sm py-1.5"
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.qty}
+                        onChange={(e) => updateItem(i, "qty", e.target.value)}
+                        className="form-input text-sm py-1.5 text-right"
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <select
+                        value={item.unit}
+                        onChange={(e) => updateItem(i, "unit", e.target.value)}
+                        className="form-input text-sm py-1.5"
+                      >
+                        {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.rate}
+                        onChange={(e) => updateItem(i, "rate", e.target.value)}
+                        placeholder="0.00"
+                        className="form-input text-sm py-1.5 text-right"
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-right font-semibold text-slate-700 tabular-nums">
+                      {formatCurrency(totals[i])}
+                    </td>
+                    <td className="px-2 py-2">
+                      {items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(i)}
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       )}
-                    </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-50 border-t border-slate-200">
+                  <td colSpan={5} className="px-4 py-3 text-right font-semibold text-slate-700">Total Estimated Amount</td>
+                  <td className="px-4 py-3 text-right font-bold text-blue-700 tabular-nums text-base">{formatCurrency(grandTotal)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Mobile item cards */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {items.map((item, i) => (
+              <div key={i} className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-400">Item {i + 1}</span>
+                  {items.length > 1 && (
+                    <button type="button" onClick={() => removeItem(i)} className="p-1 text-red-400 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
-                {errors.orderId && <p className="form-error">{errors.orderId.message}</p>}
-              </div>
-
-              {/* Order Item */}
-              {selectedOrder && (
                 <div>
-                  <label className="form-label">Related Item <span className="text-slate-400 font-normal">(optional)</span></label>
-                  <select {...register("orderItemId")} className="form-input">
-                    <option value="">— Not linked to specific item —</option>
-                    {(selectedOrder.items ?? []).map((item) => (
-                      <option key={item.id} value={item.id}>{item.itemName}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Request Type — pill toggle */}
-              <div>
-                <label className="form-label">Request Type *</label>
-                <div className="flex gap-3">
-                  {(["MATERIAL", "EXPENSE"] as const).map((type) => {
-                    const Icon = type === "MATERIAL" ? Scissors : Wallet;
-                    const isSelected = requestType === type;
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setValue("requestType", type)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-2 rounded-xl cursor-pointer text-sm font-semibold transition-all ${
-                          isSelected
-                            ? "border-blue-600 bg-blue-600 text-white shadow-md"
-                            : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        {type === "MATERIAL" ? "Material" : "Expense"}
-                      </button>
-                    );
-                  })}
-                </div>
-                {errors.requestType && <p className="form-error">{errors.requestType.message}</p>}
-              </div>
-
-              {/* Sticky CTA */}
-              <div className="sticky-cta -mx-6 -mb-6 rounded-b-xl">
-                <button
-                  type="button"
-                  onClick={goToStep2}
-                  disabled={!selectedOrder}
-                  className="btn-primary w-full justify-center py-3 text-base"
-                >
-                  Continue →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 2: Request Details ────────────── */}
-          {step === 2 && (
-            <div className="card space-y-5">
-              {/* Context */}
-              <div>
-                <h2 className="font-semibold text-slate-900">Step 2: Request Details</h2>
-                {selectedOrder && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Order: <span className="font-semibold text-blue-600">{selectedOrder.orderNumber}</span>
-                    {" · "}{selectedOrder.buyer.name}
-                    {" · "}<span className={`font-semibold ${requestType === "MATERIAL" ? "text-violet-600" : "text-amber-600"}`}>
-                      {requestType}
-                    </span>
-                  </p>
-                )}
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="form-label">Description *</label>
-                <textarea
-                  {...register("description")}
-                  className="form-input resize-none"
-                  rows={3}
-                  placeholder="What do you need to purchase and why?"
-                />
-                {errors.description && <p className="form-error">{errors.description.message}</p>}
-              </div>
-
-              {/* Qty + Rate */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Quantity *</label>
+                  <label className="form-label">Description *</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    {...register("qty", { valueAsNumber: true })}
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateItem(i, "description", e.target.value)}
+                    placeholder="Item description..."
                     className="form-input"
-                    placeholder="0"
                   />
-                  {errors.qty && <p className="form-error">{errors.qty.message}</p>}
                 </div>
-                <div>
-                  <label className="form-label">Rate (₹) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    {...register("rate", { valueAsNumber: true })}
-                    className="form-input"
-                    placeholder="0.00"
-                  />
-                  {errors.rate && <p className="form-error">{errors.rate.message}</p>}
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="form-label">Qty</label>
+                    <input type="number" min="0" step="0.01" value={item.qty} onChange={(e) => updateItem(i, "qty", e.target.value)} className="form-input text-sm" />
+                  </div>
+                  <div>
+                    <label className="form-label">Unit</label>
+                    <select value={item.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} className="form-input text-sm">
+                      {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Rate (₹)</label>
+                    <input type="number" min="0" step="0.01" value={item.rate} onChange={(e) => updateItem(i, "rate", e.target.value)} placeholder="0.00" className="form-input text-sm" />
+                  </div>
+                </div>
+                <div className="text-right text-sm font-semibold text-slate-700">
+                  Amount: {formatCurrency(totals[i])}
                 </div>
               </div>
-
-              {/* Estimated Amount */}
-              <div className="amount-display">
-                <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Estimated Amount</div>
-                <div className="text-3xl font-bold text-blue-700 tabular-nums">{formatCurrency(estimatedAmount)}</div>
-              </div>
-
-              {/* Sticky CTAs */}
-              <div className="sticky-cta -mx-6 -mb-6 rounded-b-xl flex gap-3">
-                <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1 justify-center py-3">
-                  ← Back
-                </button>
-                <button type="submit" disabled={createRequest.isPending} className="btn-primary flex-2 flex-1 justify-center py-3 text-base">
-                  {createRequest.isPending
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
-                    : "Submit Request"}
-                </button>
-              </div>
+            ))}
+            <div className="px-4 py-3 bg-slate-50 flex justify-between items-center">
+              <span className="font-semibold text-slate-700">Total</span>
+              <span className="font-bold text-blue-700 tabular-nums">{formatCurrency(grandTotal)}</span>
             </div>
+          </div>
+
+          <div className="px-4 py-3 border-t border-slate-100">
+            <button type="button" onClick={addItem} className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1.5 font-medium">
+              <Plus className="w-4 h-4" /> Add another item
+            </button>
+          </div>
+        </div>
+
+        {/* Attachment Card */}
+        <div className="card space-y-3">
+          <h2 className="font-semibold text-slate-900 text-sm uppercase tracking-wide">Attachment</h2>
+          <p className="text-xs text-slate-400">Upload a supporting document (PDF, image, Excel — max 10MB)</p>
+
+          {attachFile ? (
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
+              <Paperclip className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              <span className="text-sm text-blue-700 font-medium flex-1 truncate">{attachFile.name}</span>
+              <span className="text-xs text-blue-500">{(attachFile.size / 1024).toFixed(0)} KB</span>
+              <button type="button" onClick={() => setAttachFile(null)} className="text-blue-400 hover:text-red-500">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            >
+              <Paperclip className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-400">Click to attach a file</p>
+              <p className="text-xs text-slate-300 mt-1">PDF, JPG, PNG, DOC, XLS — max 10MB</p>
+            </button>
           )}
-        </form>
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) setAttachFile(f);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {/* Submit */}
+        <div className="flex gap-3">
+          <button type="button" onClick={() => router.back()} className="btn-secondary py-3 px-6">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => createPO.mutate()}
+            disabled={createPO.isPending || uploading || !selectedOrder}
+            className="btn-primary flex-1 justify-center py-3 text-base"
+          >
+            {createPO.isPending || uploading
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {uploading ? "Uploading..." : "Submitting..."}</>
+              : "Submit Purchase Order"}
+          </button>
+        </div>
       </div>
     </div>
   );
