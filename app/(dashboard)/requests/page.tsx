@@ -5,6 +5,8 @@ import { useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RejectModal } from "@/components/shared/RejectModal";
+import { SlideUpModal } from "@/components/shared/SlideUpModal";
+import { NewPOContent } from "@/components/requests/NewPOContent";
 import { Plus, Check, X, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -23,6 +25,7 @@ export default function RequestsPage() {
   const [page, setPage] = useState(1);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<{ id: string; number: string } | null>(null);
+  const [showNewPOModal, setShowNewPOModal] = useState(false);
   const limit = 25;
 
   const { data, isLoading } = useQuery({
@@ -55,7 +58,11 @@ export default function RequestsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Purchase Requests</h1>
           <p className="text-slate-500 text-sm">{total} requests</p>
         </div>
-        {canRaise && <Link href="/requests/new" className="btn-primary"><Plus className="w-4 h-4" /> Raise Request</Link>}
+        {canRaise && (
+          <button onClick={() => setShowNewPOModal(true)} className="btn-primary">
+            <Plus className="w-4 h-4" /> Raise Request
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -151,6 +158,23 @@ export default function RequestsPage() {
       </div>
 
       <RejectModal isOpen={rejectOpen} onClose={() => setRejectOpen(false)} onConfirm={(note) => rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, note })} requestNumber={rejectTarget?.number} isLoading={rejectMutation.isPending} />
+
+      {/* New PO Modal */}
+      <SlideUpModal
+        isOpen={showNewPOModal}
+        onClose={() => setShowNewPOModal(false)}
+        title="New Purchase Order"
+        maxWidth="3xl"
+      >
+        <NewPOContent
+          onClose={() => setShowNewPOModal(false)}
+          onSuccess={({ number }) => {
+            setShowNewPOModal(false);
+            toast.success(`PO ${number} raised successfully!`);
+            qc.invalidateQueries({ queryKey: ["requests"] });
+          }}
+        />
+      </SlideUpModal>
     </div>
   );
 }
