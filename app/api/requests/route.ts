@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { generateRequestNumber, successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/server-utils";
-import { requestSchema } from "@/lib/validations/request";
+import { poRequestSchema } from "@/lib/validations/request";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -42,6 +42,7 @@ export async function GET(request: Request) {
         requestedBy: { select: { id: true, name: true, email: true } },
         approvedBy: { select: { id: true, name: true, email: true } },
         invoices: { include: { vendor: { select: { id: true, name: true } } } },
+        items: true,
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
@@ -61,10 +62,14 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const parsed = requestSchema.safeParse({
+
+    const parsed = poRequestSchema.safeParse({
       ...body,
-      qty: Number(body.qty),
-      rate: Number(body.rate),
+      items: (body.items || []).map((item: Record<string, unknown>) => ({
+        ...item,
+        qty: Number(item.qty),
+        rate: Number(item.rate),
+      })),
     });
 
     if (!parsed.success) {
@@ -76,7 +81,16 @@ export async function POST(request: Request) {
     if (order.status !== "ACTIVE") return errorResponse("Cannot raise request on non-active order", 422);
 
     const requestNumber = await generateRequestNumber();
-    const estimatedAmount = parsed.data.qty * parsed.data.rate;
+
+    // Calculate totals from items
+    const items = parsed.data.items.map((item) => ({
+      ...item,
+      amount: item.qty * item.rate,
+    }));
+    const estimatedAmount = items.reduce((sum, i) => sum + i.amount, 0);
+
+    // Use first item for legacy fields (backward compat)
+    const firstItem = items[0];
 
     const purchaseRequest = await prisma.purchaseRequest.create({
       data: {
@@ -84,23 +98,34 @@ export async function POST(request: Request) {
         orderId: parsed.data.orderId,
         orderItemId: parsed.data.orderItemId || null,
         requestType: parsed.data.requestType,
-        description: parsed.data.description,
-        qty: parsed.data.qty,
-        rate: parsed.data.rate,
+        description: firstItem.description,
+        qty: firstItem.qty,
+        rate: firstItem.rate,
         estimatedAmount,
+        notes: parsed.data.notes || null,
+        attachmentUrl: parsed.data.attachmentUrl || null,
         requestedById: session.user.id!,
         status: "PENDING",
+        items: {
+          create: items.map((item) => ({
+            description: item.description,
+            qty: item.qty,
+            unit: item.unit || "pcs",
+            rate: item.rate,
+            amount: item.amount,
+          })),
+        },
       },
       include: {
         order: { select: { orderNumber: true } },
         requestedBy: { select: { name: true } },
+        items: true,
       },
     });
 
-    return successResponse(purchaseRequest, `Request ${requestNumber} raised successfully`, 201);
+    return successResponse(purchaseRequest, `PO ${requestNumber} raised successfully`, 201);
   } catch (err) {
     console.error(err);
-    return errorResponse("Failed to create request", 500);
+    return errorResponse("Failed to create purchase order", 500);
   }
 }
-

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RejectModal } from "@/components/shared/RejectModal";
-import { Plus, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Check, X, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -118,6 +118,9 @@ export default function RequestsPage() {
                     <td className="text-xs text-slate-500">{formatDate(req.createdAt)}</td>
                     <td>
                       <div className="flex items-center gap-1">
+                        <Link href={`/requests/${req.id}`} className="p-1.5 text-slate-500 hover:bg-slate-100 rounded" title="View PO">
+                          <FileText className="w-3.5 h-3.5" />
+                        </Link>
                         {req.status === "PENDING" && canApprove && (
                           <>
                             <button onClick={() => approveMutation.mutate(req.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Approve"><Check className="w-3.5 h-3.5" /></button>
