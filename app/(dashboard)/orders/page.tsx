@@ -5,9 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { SlideUpModal } from "@/components/shared/SlideUpModal";
+import { NewOrderContent } from "@/components/orders/NewOrderContent";
 import { Plus, Search, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type OrderRow = {
   id: string;
@@ -48,6 +51,7 @@ function CostHealthBar({ estimated, invoiced }: { estimated: number; invoiced: n
 
 export default function OrdersPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const role = session?.user?.role;
   const canCreate = ["ADMIN", "CEO", "ACCOUNTANT"].includes(role || "");
   const isProduction = role === "PRODUCTION";
@@ -55,6 +59,7 @@ export default function OrdersPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage]   = useState(1);
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const limit = 20;
 
   const { data, isLoading } = useQuery({
@@ -83,9 +88,12 @@ export default function OrdersPage() {
           <p className="text-slate-400 text-sm">{total} total orders</p>
         </div>
         {canCreate && (
-          <Link href="/orders/new" className="btn-primary">
+          <button
+            onClick={() => setShowNewOrderModal(true)}
+            className="btn-primary"
+          >
             <Plus className="w-4 h-4" /> New Order
-          </Link>
+          </button>
         )}
       </div>
 
@@ -237,6 +245,22 @@ export default function OrdersPage() {
           ))
         )}
       </div>
+
+      {/* New Order Modal */}
+      <SlideUpModal
+        isOpen={showNewOrderModal}
+        onClose={() => setShowNewOrderModal(false)}
+        title="New Order"
+        maxWidth="4xl"
+      >
+        <NewOrderContent
+          onClose={() => setShowNewOrderModal(false)}
+          onSuccess={({ id }) => {
+            setShowNewOrderModal(false);
+            router.push(`/orders/${id}`);
+          }}
+        />
+      </SlideUpModal>
     </div>
   );
 }
