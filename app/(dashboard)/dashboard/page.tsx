@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Package, AlertTriangle, Clock, CreditCard, Check, X,
-  ExternalLink, ClipboardList, Loader2, TrendingUp, ArrowRight,
+  ClipboardList, Loader2, TrendingUp, ArrowRight,
   ShoppingCart, FileText, Users, Zap,
 } from "lucide-react";
 import Link from "next/link";
