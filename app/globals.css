@@ -696,4 +696,177 @@
     white-space: nowrap;
   }
   .btn-reject:hover { background: oklch(0.950 0.080 27); border-color: oklch(0.750 0.160 27); }
+
+  /* ── Stat / KPI Gradient Cards (Canva-style) ──── */
+  .stat-card {
+    border-radius: 1.125rem;
+    padding: 1.375rem 1.25rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+    cursor: default;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 16px 40px -8px oklch(0 0 0 / 22%);
+  }
+  .stat-card-blue   { background: linear-gradient(135deg, oklch(0.546 0.215 264.364), oklch(0.480 0.200 280)); box-shadow: 0 8px 24px -4px oklch(0.546 0.215 264.364 / 40%); }
+  .stat-card-emerald{ background: linear-gradient(135deg, oklch(0.600 0.150 160),    oklch(0.530 0.160 175)); box-shadow: 0 8px 24px -4px oklch(0.600 0.150 160   / 40%); }
+  .stat-card-amber  { background: linear-gradient(135deg, oklch(0.700 0.170 55),     oklch(0.640 0.180 45));  box-shadow: 0 8px 24px -4px oklch(0.700 0.170 55    / 40%); }
+  .stat-card-rose   { background: linear-gradient(135deg, oklch(0.600 0.220 27),     oklch(0.540 0.240 15));  box-shadow: 0 8px 24px -4px oklch(0.600 0.220 27    / 40%); }
+  .stat-card-purple { background: linear-gradient(135deg, oklch(0.560 0.230 305),    oklch(0.500 0.210 290)); box-shadow: 0 8px 24px -4px oklch(0.560 0.230 305   / 40%); }
+
+  /* Decorative ring behind icon */
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: -24px; right: -24px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: oklch(1 0 0 / 8%);
+    pointer-events: none;
+  }
+  .stat-card::after {
+    content: "";
+    position: absolute;
+    bottom: -32px; right: 20px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: oklch(1 0 0 / 5%);
+    pointer-events: none;
+  }
+
+  .stat-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: oklch(1 0 0 / 75%);
+    margin-bottom: 0.875rem;
+  }
+  .stat-value {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: oklch(1 0 0);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  .stat-sub {
+    font-size: 0.75rem;
+    color: oklch(1 0 0 / 65%);
+    margin-top: 0.375rem;
+  }
+  .stat-trend-up   { color: oklch(1 0 0 / 80%); }
+  .stat-trend-down { color: oklch(1 0 0 / 80%); }
+
+  .stat-icon-box {
+    position: absolute;
+    top: 1.125rem;
+    right: 1.125rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    background: oklch(1 0 0 / 18%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    color: oklch(1 0 0);
+    flex-shrink: 0;
+  }
+
+  /* ── Welcome Banner ─────────────────────────── */
+  .dash-welcome {
+    background: linear-gradient(135deg, oklch(0.200 0.060 264) 0%, oklch(0.300 0.090 280) 50%, oklch(0.250 0.080 300) 100%);
+    border-radius: 1.25rem;
+    padding: 1.75rem 1.75rem;
+    position: relative;
+    overflow: hidden;
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .dash-welcome::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, oklch(0.546 0.215 264 / 25%) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── Quick Action Buttons ─────────────────────── */
+  .quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    text-decoration: none;
+  }
+  .quick-action:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 24px -4px oklch(0 0 0 / 12%);
+    border-color: var(--primary);
+  }
+  .quick-action-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Activity Feed Row ────────────────────────── */
+  .activity-row {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    border-radius: var(--radius-md);
+  }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-row:hover { background: var(--accent); }
+
+  /* ── Sidebar nav item (enhanced) ─────────────── */
+  .nav-item-active-dot {
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 24px;
+    border-radius: 0 3px 3px 0;
+    background: var(--primary);
+  }
 }
+
+/* ── New keyframes ─────────────────────────────── */
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+@keyframes staggerFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Stagger delays for card rows */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
