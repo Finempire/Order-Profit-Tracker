@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus, Trash2, Loader2, ArrowLeft, ChevronDown, ChevronUp, Calendar, X,
+  Plus, Trash2, Loader2, ArrowLeft, ChevronDown, ChevronUp, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
@@ -80,8 +80,11 @@ export function NewOrderContent({ onClose, onSuccess }: Props) {
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedItems = watch("items");
+  // eslint-disable-next-line react-hooks/incompatible-library
   const currency = watch("currency");
+  // eslint-disable-next-line react-hooks/incompatible-library
   const exchangeRate = watch("exchangeRate");
   const isForeign = currency !== "INR";
   const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₹";
