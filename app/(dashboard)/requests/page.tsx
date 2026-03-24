@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { RejectModal } from "@/components/shared/RejectModal";
 import { SlideUpModal } from "@/components/shared/SlideUpModal";
 import { NewPOContent } from "@/components/requests/NewPOContent";
 import { POReviewModal } from "@/components/requests/POReviewModal";
@@ -25,8 +24,6 @@ export default function RequestsPage() {
   const [status, setStatus] = useState("");
   const [requestType, setRequestType] = useState("");
   const [page, setPage] = useState(1);
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [rejectTarget, setRejectTarget] = useState<{ id: string; number: string } | null>(null);
   const [showNewPOModal, setShowNewPOModal] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -43,12 +40,6 @@ export default function RequestsPage() {
   const requests = data?.data?.requests || [];
   const total = data?.data?.total || 0;
   const totalPages = data?.data?.totalPages || 1;
-
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, note }: { id: string; note: string }) =>
-      fetch(`/api/requests/${id}/reject`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rejectionNote: note }) }).then((r) => r.json()),
-    onSuccess: (res) => { if (res.success) { toast.success("Rejected"); qc.invalidateQueries({ queryKey: ["requests"] }); setRejectOpen(false); } else toast.error(res.error); },
-  });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => fetch(`/api/requests/${id}`, { method: "DELETE" }).then((r) => r.json()),
@@ -187,9 +178,6 @@ export default function RequestsPage() {
           </div>
         )}
       </div>
-
-      {/* Reject Modal (for inline reject from list, without Review modal) */}
-      <RejectModal isOpen={rejectOpen} onClose={() => setRejectOpen(false)} onConfirm={(note) => rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, note })} requestNumber={rejectTarget?.number} isLoading={rejectMutation.isPending} />
 
       {/* PO Review Modal */}
       <POReviewModal
