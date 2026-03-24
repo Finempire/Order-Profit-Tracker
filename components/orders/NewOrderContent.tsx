@@ -80,6 +80,7 @@ export function NewOrderContent({ onClose, onSuccess }: Props) {
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedItems = watch("items");
   const currency = watch("currency");
   const exchangeRate = watch("exchangeRate");

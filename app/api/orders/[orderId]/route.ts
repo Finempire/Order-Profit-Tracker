@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/server-utils";
 
 const EDIT_ROLES = ["ADMIN", "CEO", "ACCOUNTANT"];
+const DELETE_ROLES = ["ADMIN"];
 
 export async function GET(
   request: Request,
@@ -96,5 +97,25 @@ export async function PATCH(
   } catch (err) {
     console.error(err);
     return errorResponse("Failed to update order", 500);
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ orderId: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) return unauthorizedResponse();
+  if (!DELETE_ROLES.includes(session.user.role || "")) return forbiddenResponse();
+
+  const { orderId } = await params;
+  try {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) return errorResponse("Order not found", 404);
+    await prisma.order.delete({ where: { id: orderId } });
+    return successResponse(null, "Order deleted successfully");
+  } catch (err) {
+    console.error(err);
+    return errorResponse("Failed to delete order", 500);
   }
 }

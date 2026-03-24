@@ -4,10 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { RejectModal } from "@/components/shared/RejectModal";
 import { SlideUpModal } from "@/components/shared/SlideUpModal";
 import { NewPOContent } from "@/components/requests/NewPOContent";
-import { Plus, Check, X, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { POReviewModal } from "@/components/requests/POReviewModal";
+import { Plus, Eye, Trash2, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -19,13 +19,14 @@ export default function RequestsPage() {
 
   const canApprove = ["ADMIN", "CEO", "ACCOUNTANT"].includes(role || "");
   const canRaise = ["ADMIN", "PRODUCTION"].includes(role || "");
+  const isAdmin = role === "ADMIN";
 
   const [status, setStatus] = useState("");
   const [requestType, setRequestType] = useState("");
   const [page, setPage] = useState(1);
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [rejectTarget, setRejectTarget] = useState<{ id: string; number: string } | null>(null);
   const [showNewPOModal, setShowNewPOModal] = useState(false);
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const limit = 25;
 
   const { data, isLoading } = useQuery({
@@ -40,15 +41,17 @@ export default function RequestsPage() {
   const total = data?.data?.total || 0;
   const totalPages = data?.data?.totalPages || 1;
 
-  const approveMutation = useMutation({
-    mutationFn: (id: string) => fetch(`/api/requests/${id}/approve`, { method: "PATCH" }).then((r) => r.json()),
-    onSuccess: (res) => { if (res.success) { toast.success("Approved"); qc.invalidateQueries({ queryKey: ["requests"] }); } else toast.error(res.error); },
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, note }: { id: string; note: string }) =>
-      fetch(`/api/requests/${id}/reject`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rejectionNote: note }) }).then((r) => r.json()),
-    onSuccess: (res) => { if (res.success) { toast.success("Rejected"); qc.invalidateQueries({ queryKey: ["requests"] }); setRejectOpen(false); } else toast.error(res.error); },
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => fetch(`/api/requests/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success("Purchase request deleted");
+        qc.invalidateQueries({ queryKey: ["requests"] });
+        setDeleteConfirmId(null);
+      } else {
+        toast.error(res.error || "Failed to delete");
+      }
+    },
   });
 
   return (
@@ -125,17 +128,36 @@ export default function RequestsPage() {
                     <td className="text-xs text-slate-500">{formatDate(req.createdAt)}</td>
                     <td>
                       <div className="flex items-center gap-1">
-                        <Link href={`/requests/${req.id}`} className="p-1.5 text-slate-500 hover:bg-slate-100 rounded" title="View PO">
+                        {/* View full PO document */}
+                        <Link href={`/requests/${req.id}`} className="p-1.5 text-slate-500 hover:bg-slate-100 rounded" title="View PO Document">
                           <FileText className="w-3.5 h-3.5" />
                         </Link>
-                        {req.status === "PENDING" && canApprove && (
-                          <>
-                            <button onClick={() => approveMutation.mutate(req.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Approve"><Check className="w-3.5 h-3.5" /></button>
-                            <button onClick={() => { setRejectTarget({ id: req.id, number: req.requestNumber }); setRejectOpen(true); }} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Reject"><X className="w-3.5 h-3.5" /></button>
-                          </>
+
+                        {/* Review preview — opens POReviewModal */}
+                        {canApprove && (
+                          <button
+                            onClick={() => setReviewId(req.id)}
+                            className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"
+                            title={req.status === "PENDING" ? "Review & Approve" : "Preview PO"}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
                         )}
+
+                        {/* Add Invoice link for approved POs */}
                         {req.status === "APPROVED" && (
                           <Link href={`/procurement/${req.id}`} className="text-xs text-blue-600 hover:underline">Add Invoice</Link>
+                        )}
+
+                        {/* Admin delete */}
+                        {isAdmin && (
+                          <button
+                            onClick={() => setDeleteConfirmId(req.id)}
+                            className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
+                            title="Delete PO"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -157,7 +179,41 @@ export default function RequestsPage() {
         )}
       </div>
 
-      <RejectModal isOpen={rejectOpen} onClose={() => setRejectOpen(false)} onConfirm={(note) => rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, note })} requestNumber={rejectTarget?.number} isLoading={rejectMutation.isPending} />
+      {/* PO Review Modal */}
+      <POReviewModal
+        requestId={reviewId}
+        onClose={() => setReviewId(null)}
+        canApprove={canApprove}
+        onApproved={() => qc.invalidateQueries({ queryKey: ["requests"] })}
+      />
+
+      {/* Delete Confirm Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative z-50 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Delete Purchase Request?</h3>
+                <p className="text-sm text-slate-500">This action cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5 justify-end">
+              <button onClick={() => setDeleteConfirmId(null)} className="btn-secondary px-4">Cancel</button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteConfirmId)}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                {deleteMutation.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New PO Modal */}
       <SlideUpModal
