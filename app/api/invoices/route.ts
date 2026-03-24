@@ -124,7 +124,7 @@ export async function POST(request: Request) {
 
     // Verify request is APPROVED
     const purchaseRequest = await prisma.purchaseRequest.findUnique({ where: { id: requestId } });
-    if (!purchaseRequest) return errorResponse("Purchase request not found", 404);
+    if (!purchaseRequest) return errorResponse("Purchase order not found", 404);
     if (purchaseRequest.status !== "APPROVED") {
       return errorResponse("Invoice can only be added to APPROVED requests", 422);
     }

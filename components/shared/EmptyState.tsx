@@ -32,7 +32,7 @@ const DEFAULTS: Record<EmptyVariant, { icon: string; title: string; description:
   },
   requests: {
     icon: "📋",
-    title: "No purchase requests",
+    title: "No purchase orders",
     description: "Requests raised by your team will appear here for review.",
   },
   buyers: {

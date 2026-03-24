@@ -148,7 +148,7 @@ export default function ProcurementPage() {
           <div className="empty-state py-10">
             <div className="empty-state-icon">🧾</div>
             <h3>No invoices yet</h3>
-            <p>Add the first vendor invoice for this purchase request.</p>
+            <p>Add the first vendor invoice for this purchase order.</p>
           </div>
         ) : (
           <div className="space-y-3">
