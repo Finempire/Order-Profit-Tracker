@@ -62,7 +62,7 @@ export function RejectModal({
         {/* Body */}
         <div className="px-5 py-4 space-y-4">
           <p className="text-sm text-slate-600">
-            Please provide a reason for rejecting this purchase request. This note will be visible to the requester.
+            Please provide a reason for rejecting this purchase order. This note will be visible to the requester.
           </p>
           <div>
             <label className="form-label">Rejection Note *</label>

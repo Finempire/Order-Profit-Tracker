@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Order Profit Tracker",
-  description: "Order profit and procurement tracking: orders, purchase requests, invoices, and payments.",
+  description: "Order profit and procurement tracking: orders, purchase orders, invoices, and payments.",
 };
 
 export default function RootLayout({

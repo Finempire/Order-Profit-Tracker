@@ -337,7 +337,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-slate-400 mt-0.5">Control which events you get notified about</p>
               </div>
               {[
-                { label: "Request Approved",   sub: "When someone approves your purchase request" },
+                { label: "Request Approved",   sub: "When someone approves your purchase order" },
                 { label: "Request Rejected",   sub: "When your request is rejected with a reason" },
                 { label: "Invoice Uploaded",   sub: "When a vendor invoice is added to an order" },
                 { label: "Payment Recorded",   sub: "When a payment is marked on an invoice" },

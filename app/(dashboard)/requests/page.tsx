@@ -58,7 +58,7 @@ export default function RequestsPage() {
     <div className="p-4 lg:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Purchase Requests</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Purchase Orders</h1>
           <p className="text-slate-500 text-sm">{total} requests</p>
         </div>
         {canRaise && (
@@ -197,7 +197,7 @@ export default function RequestsPage() {
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Delete Purchase Request?</h3>
+                <h3 className="font-semibold text-slate-900">Delete Purchase Order?</h3>
                 <p className="text-sm text-slate-500">This action cannot be undone.</p>
               </div>
             </div>

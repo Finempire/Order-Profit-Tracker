@@ -324,13 +324,13 @@ export default function OrderDetailPage() {
       {activeTab === "Requests" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-slate-900">Purchase Requests</h3>
+            <h3 className="font-semibold text-slate-900">Purchase Orders</h3>
             <Link href={`/requests/new?orderId=${orderId}`} className="btn-primary text-sm">
               Raise Request
             </Link>
           </div>
           {order.requests.length === 0 ? (
-            <div className="card text-center py-10 text-slate-400">No purchase requests yet</div>
+            <div className="card text-center py-10 text-slate-400">No purchase orders yet</div>
           ) : (
             <div className="card p-0">
               <div className="table-wrapper">
