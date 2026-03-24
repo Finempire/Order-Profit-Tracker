@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SlideUpModal } from "@/components/shared/SlideUpModal";
 import { NewOrderContent } from "@/components/orders/NewOrderContent";
-import { Plus, Search, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type OrderRow = {
   id: string;
@@ -52,15 +53,31 @@ function CostHealthBar({ estimated, invoiced }: { estimated: number; invoiced: n
 export default function OrdersPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const qc = useQueryClient();
   const role = session?.user?.role;
   const canCreate = ["ADMIN", "CEO", "ACCOUNTANT"].includes(role || "");
+  const isAdmin = role === "ADMIN";
   const isProduction = role === "PRODUCTION";
   const colCount = isProduction ? 4 : 9;
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage]   = useState(1);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const limit = 20;
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => fetch(`/api/orders/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success("Order deleted");
+        qc.invalidateQueries({ queryKey: ["orders"] });
+        setDeleteConfirmId(null);
+      } else {
+        toast.error(res.error || "Failed to delete order");
+      }
+    },
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["orders", search, status, page],
@@ -180,9 +197,20 @@ export default function OrdersPage() {
                     )}
                     <td><StatusBadge status={order.status} /></td>
                     <td>
-                      <Link href={`/orders/${order.id}`} className="text-xs text-blue-600 hover:underline font-medium">
-                        View →
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/orders/${order.id}`} className="text-xs text-blue-600 hover:underline font-medium">
+                          View →
+                        </Link>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setDeleteConfirmId(order.id)}
+                            className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
+                            title="Delete order"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -245,6 +273,34 @@ export default function OrdersPage() {
           ))
         )}
       </div>
+
+      {/* Delete Confirm Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative z-50 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Delete Order?</h3>
+                <p className="text-sm text-slate-500">This will permanently delete the order and all its data.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5 justify-end">
+              <button onClick={() => setDeleteConfirmId(null)} className="btn-secondary px-4">Cancel</button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteConfirmId)}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                {deleteMutation.isPending ? "Deleting…" : "Delete Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Order Modal */}
       <SlideUpModal

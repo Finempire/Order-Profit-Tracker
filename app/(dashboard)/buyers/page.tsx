@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/lib/utils";
-import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { BuyerForm } from "@/components/forms/BuyerForm";
-import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 export default function BuyersPage() {
   const qc = useQueryClient();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const limit = 20;
 
   const { data, isLoading } = useQuery({
@@ -26,6 +30,19 @@ export default function BuyersPage() {
   const buyers = data?.data?.buyers || [];
   const total = data?.data?.total || 0;
   const totalPages = data?.data?.totalPages || 1;
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => fetch(`/api/buyers/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success("Buyer deleted");
+        qc.invalidateQueries({ queryKey: ["buyers"] });
+        setDeleteConfirmId(null);
+      } else {
+        toast.error(res.error || "Failed to delete buyer");
+      }
+    },
+  });
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -65,7 +82,18 @@ export default function BuyersPage() {
                     <td><span className="badge badge-active">{buyer._count.orders} orders</span></td>
                     <td className="text-slate-500 text-xs">{formatDate(buyer.createdAt)}</td>
                     <td>
-                      <Link href={`/buyers/${buyer.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/buyers/${buyer.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setDeleteConfirmId(buyer.id)}
+                            className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
+                            title="Delete buyer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -84,6 +112,34 @@ export default function BuyersPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirm Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative z-50 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Delete Buyer?</h3>
+                <p className="text-sm text-slate-500">This cannot be undone. Buyers with orders cannot be deleted.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5 justify-end">
+              <button onClick={() => setDeleteConfirmId(null)} className="btn-secondary px-4">Cancel</button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteConfirmId)}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                {deleteMutation.isPending ? "Deleting…" : "Delete Buyer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Buyer Sheet */}
       {showForm && (

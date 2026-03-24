@@ -66,3 +66,25 @@ export async function PATCH(
     return errorResponse("Failed to update invoice", 500);
   }
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ invoiceId: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) return unauthorizedResponse();
+
+  const DELETE_ROLES = ["ADMIN"];
+  if (!DELETE_ROLES.includes(session.user.role || "")) return forbiddenResponse();
+
+  const { invoiceId } = await params;
+  try {
+    const invoice = await prisma.vendorInvoice.findUnique({ where: { id: invoiceId } });
+    if (!invoice) return errorResponse("Invoice not found", 404);
+    await prisma.vendorInvoice.delete({ where: { id: invoiceId } });
+    return successResponse(null, "Invoice deleted successfully");
+  } catch (err) {
+    console.error(err);
+    return errorResponse("Failed to delete invoice", 500);
+  }
+}

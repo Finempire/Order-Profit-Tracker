@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/server-utils";
+import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/server-utils";
+
+const DELETE_ROLES = ["ADMIN"];
 
 export async function GET(
   _req: Request,
@@ -35,5 +37,25 @@ export async function GET(
   } catch (err) {
     console.error(err);
     return errorResponse("Failed to fetch request", 500);
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ requestId: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) return unauthorizedResponse();
+  if (!DELETE_ROLES.includes(session.user.role || "")) return forbiddenResponse();
+
+  const { requestId } = await params;
+  try {
+    const req = await prisma.purchaseRequest.findUnique({ where: { id: requestId } });
+    if (!req) return errorResponse("Request not found", 404);
+    await prisma.purchaseRequest.delete({ where: { id: requestId } });
+    return successResponse(null, "Purchase request deleted successfully");
+  } catch (err) {
+    console.error(err);
+    return errorResponse("Failed to delete request", 500);
   }
 }
