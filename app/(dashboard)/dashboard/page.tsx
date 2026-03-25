@@ -19,6 +19,7 @@ import { useSession } from "next-auth/react";
 import { SlideUpModal } from "@/components/shared/SlideUpModal";
 import { NewPOContent } from "@/components/requests/NewPOContent";
 import { NewOrderContent } from "@/components/orders/NewOrderContent";
+import { POReviewModal } from "@/components/requests/POReviewModal";
 import { useRouter } from "next/navigation";
 
 async function fetchDashboardData() {
@@ -62,6 +63,7 @@ export default function DashboardPage() {
   const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
   const [showPOModal, setShowPOModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -331,7 +333,12 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-blue-600">{req.requestNumber}</span>
+                          <button
+                            onClick={() => setPreviewId(req.id)}
+                            className="font-mono text-xs font-bold text-blue-600 hover:underline text-left"
+                          >
+                            {req.requestNumber}
+                          </button>
                           <StatusBadge status={req.requestType} />
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5 truncate">
@@ -454,6 +461,14 @@ export default function DashboardPage() {
           }}
         />
       </SlideUpModal>
+
+      {/* PO Preview + Approve/Reject from dashboard */}
+      <POReviewModal
+        requestId={previewId}
+        onClose={() => setPreviewId(null)}
+        canApprove={canApprove}
+        onApproved={() => qc.invalidateQueries({ queryKey: ["dashboard"] })}
+      />
     </div>
   );
 }

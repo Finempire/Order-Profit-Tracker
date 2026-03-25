@@ -1,14 +1,17 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { use } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { use, useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
   ArrowLeft, Printer, Paperclip, ExternalLink,
-  Calendar, User, Package, FileText,
+  Calendar, User, Package, FileText, Pencil, Plus, Trash2, Loader2, X,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+
+const UNITS = ["pcs", "kg", "m", "m²", "L", "box", "roll", "set", "lot", "hr", "day"];
 
 interface POItem {
   id: string;
@@ -38,15 +41,75 @@ interface PODetail {
   items: POItem[];
 }
 
+interface EditItem { id: number; description: string; qty: string; unit: string; rate: string; }
+
+function emptyEditItem(): EditItem {
+  return { id: Date.now() + Math.random(), description: "", qty: "1", unit: "pcs", rate: "" };
+}
+
 export default function PODetailPage({ params }: { params: Promise<{ requestId: string }> }) {
   const { requestId } = use(params);
+  const qc = useQueryClient();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editItems, setEditItems] = useState<EditItem[]>([emptyEditItem()]);
+  const [editNotes, setEditNotes] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["request", requestId],
     queryFn: () => fetch(`/api/requests/${requestId}`).then((r) => r.json()),
   });
 
+  // Company settings for the letterhead
+  const { data: companyData } = useQuery({
+    queryKey: ["company-settings"],
+    queryFn: () => fetch("/api/settings/company").then((r) => r.json()),
+  });
+  const company = companyData?.data;
+
   const po: PODetail | null = data?.data || null;
+
+  const openEdit = () => {
+    if (!po) return;
+    setEditItems(
+      po.items.length > 0
+        ? po.items.map((i) => ({ id: Math.random(), description: i.description, qty: String(i.qty), unit: i.unit, rate: String(i.rate) }))
+        : [{ id: Math.random(), description: po.description, qty: "1", unit: "pcs", rate: String(po.estimatedAmount) }]
+    );
+    setEditNotes(po.notes || "");
+    setEditOpen(true);
+  };
+
+  const updateEditItem = (id: number, field: keyof EditItem, value: string) =>
+    setEditItems((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
+  const removeEditItem = (id: number) =>
+    setEditItems((prev) => prev.length > 1 ? prev.filter((i) => i.id !== id) : prev);
+
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      const valid = editItems.filter((i) => i.description.trim() && Number(i.qty) > 0);
+      if (valid.length === 0) { toast.error("Add at least one valid item"); return null; }
+      const res = await fetch(`/api/requests/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notes: editNotes.trim() || null,
+          items: valid.map((i) => ({ description: i.description.trim(), qty: Number(i.qty), unit: i.unit, rate: Number(i.rate) || 0 })),
+        }),
+      });
+      return res.json();
+    },
+    onSuccess: (res) => {
+      if (!res) return;
+      if (res.success) {
+        toast.success("Purchase order updated");
+        setEditOpen(false);
+        qc.invalidateQueries({ queryKey: ["request", requestId] });
+      } else {
+        toast.error(res.error || "Failed to update");
+      }
+    },
+  });
 
   if (isLoading) {
     return (
@@ -87,10 +150,7 @@ export default function PODetailPage({ params }: { params: Promise<{ requestId: 
       <div className="p-4 lg:p-6 max-w-4xl mx-auto space-y-5">
         {/* Toolbar */}
         <div className="flex items-center gap-3 no-print">
-          <Link
-            href="/requests"
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
-          >
+          <Link href="/requests" className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex-1">
@@ -98,10 +158,12 @@ export default function PODetailPage({ params }: { params: Promise<{ requestId: 
             <p className="text-slate-400 text-sm font-mono">{po.requestNumber}</p>
           </div>
           <StatusBadge status={po.status} />
-          <button
-            onClick={() => window.print()}
-            className="btn-primary gap-2"
-          >
+          {po.status === "PENDING" && (
+            <button onClick={openEdit} className="btn-secondary gap-2">
+              <Pencil className="w-4 h-4" /> Edit
+            </button>
+          )}
+          <button onClick={() => window.print()} className="btn-primary gap-2">
             <Printer className="w-4 h-4" /> Export PDF
           </button>
         </div>
@@ -115,9 +177,16 @@ export default function PODetailPage({ params }: { params: Promise<{ requestId: 
             <div className="flex items-start justify-between mb-6 pb-6 border-b border-slate-100">
               <div>
                 <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                  Order to <span className="text-emerald-600">Profit</span>
+                  {company?.companyName ? company.companyName : <>Order to <span className="text-emerald-600">Profit</span></>}
                 </h2>
-                <p className="text-slate-400 text-xs mt-1">Purchase Order Management System</p>
+                {company?.gstin   && <p className="text-slate-500 text-xs mt-0.5">GSTIN: {company.gstin}</p>}
+                {company?.address && <p className="text-slate-400 text-xs mt-0.5">{company.address}</p>}
+                {(company?.phone || company?.email) && (
+                  <p className="text-slate-400 text-xs mt-0.5">
+                    {[company.phone, company.email].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {!company?.companyName && <p className="text-slate-400 text-xs mt-1">Purchase Order Management System</p>}
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-blue-700 font-mono">{po.requestNumber}</div>
@@ -295,7 +364,7 @@ export default function PODetailPage({ params }: { params: Promise<{ requestId: 
               </div>
             </div>
             <div className="text-center text-xs text-slate-300 mt-6">
-              Generated by Order to Profit • {new Date().toLocaleDateString()}
+              {company?.companyName ? company.companyName : "Order to Profit"} • {new Date().toLocaleDateString()}
             </div>
           </div>
 
@@ -306,11 +375,96 @@ export default function PODetailPage({ params }: { params: Promise<{ requestId: 
           <Link href="/requests" className="btn-secondary py-2.5 px-5">
             ← Back to Requests
           </Link>
+          {po.status === "PENDING" && (
+            <button onClick={openEdit} className="btn-secondary gap-2 py-2.5 px-5">
+              <Pencil className="w-4 h-4" /> Edit PO
+            </button>
+          )}
           <button onClick={() => window.print()} className="btn-primary gap-2 py-2.5 px-5">
             <Printer className="w-4 h-4" /> Print / Save as PDF
           </button>
         </div>
       </div>
+
+      {/* ── Edit PO Modal ─────────────────────────────────── */}
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm no-print">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="font-bold text-slate-900">Edit Purchase Order</h3>
+                <p className="text-xs text-slate-400 font-mono">{po.requestNumber}</p>
+              </div>
+              <button onClick={() => setEditOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Line items */}
+              <div className="card p-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                  <h4 className="font-semibold text-slate-900 text-sm">Line Items</h4>
+                  <button type="button" onClick={() => setEditItems((p) => [...p, emptyEditItem()])} className="btn-secondary text-xs py-1.5 px-3">
+                    <Plus className="w-3.5 h-3.5" /> Add Item
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" style={{ minWidth: 500 }}>
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-slate-50">
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-slate-500">Description</th>
+                        <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 w-20">Qty</th>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-slate-500 w-20">Unit</th>
+                        <th className="text-right px-3 py-2 text-xs font-semibold text-slate-500 w-28">Rate (₹)</th>
+                        <th className="w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editItems.map((item) => (
+                        <tr key={item.id} className="border-b border-slate-50">
+                          <td className="px-2 py-2">
+                            <input type="text" value={item.description} onChange={(e) => updateEditItem(item.id, "description", e.target.value)} placeholder="Item description..." className="form-input text-sm py-1.5" />
+                          </td>
+                          <td className="px-2 py-2">
+                            <input type="number" min="0" value={item.qty} onChange={(e) => updateEditItem(item.id, "qty", e.target.value)} className="form-input text-sm py-1.5 text-right" />
+                          </td>
+                          <td className="px-2 py-2">
+                            <select value={item.unit} onChange={(e) => updateEditItem(item.id, "unit", e.target.value)} className="form-input text-sm py-1.5">
+                              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                          </td>
+                          <td className="px-2 py-2">
+                            <input type="number" min="0" value={item.rate} onChange={(e) => updateEditItem(item.id, "rate", e.target.value)} placeholder="0.00" className="form-input text-sm py-1.5 text-right" />
+                          </td>
+                          <td className="px-2 py-2">
+                            <button type="button" onClick={() => removeEditItem(item.id)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="form-label">Notes / Terms <span className="text-slate-400 font-normal">(optional)</span></label>
+                <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="form-input resize-none" rows={2} placeholder="Delivery instructions, payment terms..." />
+              </div>
+            </div>
+
+            <div className="flex gap-3 px-5 py-4 border-t border-slate-100 shrink-0">
+              <button onClick={() => setEditOpen(false)} className="btn-secondary px-5">Cancel</button>
+              <button onClick={() => editMutation.mutate()} disabled={editMutation.isPending} className="btn-primary flex-1 justify-center">
+                {editMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

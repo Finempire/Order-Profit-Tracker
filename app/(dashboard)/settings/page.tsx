@@ -42,6 +42,90 @@ const ROLE_COLORS: Record<UserRole, string> = {
   PRODUCTION:  "bg-amber-100 text-amber-700",
 };
 
+/* ── Company Tab (self-contained) ────────────────────────────── */
+function CompanyTab() {
+  const qc = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["company-settings"],
+    queryFn: () => fetch("/api/settings/company").then((r) => r.json()),
+  });
+
+  const saved = data?.data;
+  const [form, setForm] = useState({ companyName: "", gstin: "", address: "", phone: "", email: "" });
+
+  // Populate form once data loads
+  useState(() => {
+    if (saved) setForm({ companyName: saved.companyName || "", gstin: saved.gstin || "", address: saved.address || "", phone: saved.phone || "", email: saved.email || "" });
+  });
+
+  // Sync when saved changes
+  const [synced, setSynced] = useState(false);
+  if (saved && !synced) {
+    setForm({ companyName: saved.companyName || "", gstin: saved.gstin || "", address: saved.address || "", phone: saved.phone || "", email: saved.email || "" });
+    setSynced(true);
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: async (payload: typeof form) => {
+      const res = await fetch("/api/settings/company", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return res.json();
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success("Company info saved");
+        qc.invalidateQueries({ queryKey: ["company-settings"] });
+      } else {
+        toast.error(res.error || "Failed to save");
+      }
+    },
+  });
+
+  const fields: { key: keyof typeof form; label: string; placeholder: string }[] = [
+    { key: "companyName", label: "Company Name", placeholder: "Your Manufacturing Ltd." },
+    { key: "gstin",       label: "GSTIN",        placeholder: "22AAAAA0000A1Z5"         },
+    { key: "address",     label: "Address",      placeholder: "123 Industrial Area..."  },
+    { key: "phone",       label: "Phone",        placeholder: "+91 98765 43210"         },
+    { key: "email",       label: "Email",        placeholder: "info@company.com"        },
+  ];
+
+  return (
+    <div className="card space-y-5">
+      <div>
+        <h2 className="font-semibold text-slate-900">Company Information</h2>
+        <p className="text-xs text-slate-400 mt-0.5">Shown on exported Purchase Order PDFs</p>
+      </div>
+      {isLoading ? (
+        <div className="space-y-4">{[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-slate-100 animate-pulse rounded-xl" />)}</div>
+      ) : (
+        fields.map((f) => (
+          <div key={f.key}>
+            <label className="form-label">{f.label}</label>
+            <input
+              className="form-input"
+              placeholder={f.placeholder}
+              value={form[f.key]}
+              onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
+            />
+          </div>
+        ))
+      )}
+      <button
+        className="btn-primary"
+        onClick={() => saveMutation.mutate(form)}
+        disabled={saveMutation.isPending || isLoading}
+      >
+        {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+        Save Company Info
+      </button>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
@@ -445,28 +529,7 @@ export default function SettingsPage() {
           )}
 
           {/* Company — Admin only */}
-          {activeTab === "company" && isAdmin && (
-            <div className="card space-y-5">
-              <div>
-                <h2 className="font-semibold text-slate-900">Company Information</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Used on invoices and reports</p>
-              </div>
-              {[
-                { label: "Company Name", placeholder: "Your Manufacturing Ltd." },
-                { label: "GSTIN",        placeholder: "22AAAAA0000A1Z5"         },
-                { label: "Address",      placeholder: "123 Industrial Area..."  },
-                { label: "Phone",        placeholder: "+91 98765 43210"         },
-                { label: "Email",        placeholder: "info@company.com"        },
-              ].map((f) => (
-                <div key={f.label}>
-                  <label className="form-label">{f.label}</label>
-                  <input className="form-input" placeholder={f.placeholder} />
-                </div>
-              ))}
-              <button className="btn-primary">Save Company Info</button>
-              <p className="text-xs text-slate-400">Company settings saved locally (API integration coming soon).</p>
-            </div>
-          )}
+          {activeTab === "company" && isAdmin && <CompanyTab />}
 
         </div>
       </div>
