@@ -228,6 +228,16 @@ model LabourCostEntry {
   updatedAt   DateTime     @updatedAt
 }
 
+model CompanySetting {
+  id          String   @id @default("singleton")
+  companyName String   @default("")
+  gstin       String   @default("")
+  address     String   @default("")
+  phone       String   @default("")
+  email       String   @default("")
+  updatedAt   DateTime @updatedAt
+}
+
 model OverheadCostEntry {
   id                 String       @id @default(cuid())
   sheetId            String
