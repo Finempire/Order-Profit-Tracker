@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { StatCard } from "@/components/shared/CostCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RevenueAreaChart } from "@/components/charts/RevenueAreaChart";
 import { RequestDonutChart } from "@/components/charts/RequestDonutChart";
@@ -10,8 +9,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Package, AlertTriangle, Clock, CreditCard, Check, X,
-  ClipboardList, Loader2, TrendingUp, ArrowRight,
-  ShoppingCart, FileText, Users, Zap,
+  ClipboardList, Loader2, ArrowRight,
+  ShoppingCart, FileText, Users, TrendingUp, Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -39,14 +38,14 @@ async function fetchDashboardData() {
 
 function DashboardSkeleton() {
   return (
-    <div className="p-4 lg:p-6 space-y-5">
-      <div className="skeleton rounded-2xl" style={{ height: 96 }} />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => <div key={i} className="skeleton rounded-2xl" style={{ height: 112 }} />)}
+    <div className="p-4 lg:p-5 space-y-4" style={{ background: "#f0f0f0", minHeight: "100%" }}>
+      <div className="h-24 bg-white rounded border border-slate-200 animate-pulse" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border border-slate-300 rounded overflow-hidden">
+        {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-white animate-pulse border-r border-slate-200" />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="skeleton lg:col-span-2 rounded-2xl" style={{ height: 280 }} />
-        <div className="skeleton rounded-2xl" style={{ height: 280 }} />
+        <div className="lg:col-span-2 h-60 bg-white rounded border border-slate-200 animate-pulse" />
+        <div className="h-60 bg-white rounded border border-slate-200 animate-pulse" />
       </div>
     </div>
   );
@@ -126,48 +125,49 @@ export default function DashboardPage() {
   const isFinance    = !isProduction;
 
   const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="p-4 lg:p-6 space-y-5 max-w-[1600px] mx-auto">
+    <div className="p-4 lg:p-5 space-y-4" style={{ background: "#f0f0f0", minHeight: "100%" }}>
 
-      {/* ── Welcome Banner ────────────────────────── */}
-      <div className="dash-welcome">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-white/60 text-sm font-medium mb-1">{dateStr}</p>
-            <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
-              {greeting}, {session?.user?.name?.split(" ")[0]} 👋
-            </h1>
-            <p className="text-white/60 text-sm mt-1.5">
-              {isProduction
-                ? `You have ${pendingCount} request${pendingCount !== 1 ? "s" : ""} pending approval.`
-                : `${orders.length} active orders · ${requests.length} pending approval${requests.length !== 1 ? "s" : ""}`}
-            </p>
+      {/* ── Excel-style Welcome Header ── */}
+      <div className="rounded border overflow-hidden" style={{ borderColor: "#217346" }}>
+        <div className="px-4 py-3 flex items-center justify-between flex-wrap gap-3" style={{ background: "#217346" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded flex items-center justify-center font-black text-white text-xs" style={{ background: "#1a5c37" }}>
+              XL
+            </div>
+            <div>
+              <div className="text-white/70 text-xs">{dateStr}</div>
+              <div className="text-white font-bold text-base">
+                Dashboard — {session?.user?.name?.split(" ")[0]}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2">
             {isProduction ? (
               <button
                 onClick={() => setShowPOModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-blue-700 font-semibold rounded-xl text-sm hover:bg-white/90 transition-all shadow-lg"
+                className="xls-toolbar-btn xls-toolbar-btn-primary"
+                style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)", color: "white" }}
               >
-                <ClipboardList className="w-4 h-4" /> Raise Request
+                <ClipboardList className="w-3 h-3" /> Raise PO
               </button>
             ) : (
               <>
                 <button
                   onClick={() => setShowOrderModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-blue-700 font-semibold rounded-xl text-sm hover:bg-white/90 transition-all shadow-lg"
+                  className="xls-toolbar-btn"
+                  style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)", color: "white" }}
                 >
-                  <Package className="w-4 h-4" /> New Order
+                  <Package className="w-3 h-3" /> New Order
                 </button>
                 <Link
                   href="/requests"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur text-white font-semibold rounded-xl text-sm hover:bg-white/20 transition-all border border-white/20"
+                  className="xls-toolbar-btn"
+                  style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)", color: "white" }}
                 >
-                  <FileText className="w-4 h-4" /> Requests
+                  <FileText className="w-3 h-3" /> Purchase Orders
                 </Link>
               </>
             )}
@@ -175,272 +175,272 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Stat Cards ──────────────────────────────── */}
+      {/* ── KPI Grid ── */}
       {isFinance && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Active Orders"
-            value={orders.length}
-            icon={Package}
-            variant="blue"
-            subLabel="currently in production"
-            className="stagger-1"
-          />
-          <StatCard
-            label="Pending Approvals"
-            value={requests.length}
-            icon={Clock}
-            variant="amber"
-            subLabel={requests.length > 0 ? "needs your action" : "all clear"}
-            className="stagger-2"
-          />
-          <StatCard
-            label="Cost Overruns"
-            value={overrunOrders}
-            icon={AlertTriangle}
-            variant="rose"
-            subLabel="orders over budget"
-            className="stagger-3"
-          />
-          <StatCard
-            label="Pending Payments"
-            value={pendingPaymentsTotal}
-            icon={CreditCard}
-            variant="emerald"
-            isCurrency
-            subLabel={`${invoices.length} unpaid invoice${invoices.length !== 1 ? "s" : ""}`}
-            className="stagger-4"
-          />
+        <div className="xls-kpi-grid">
+          {[
+            { label: "Active Orders", value: String(orders.length), sub: "in production", icon: Package, alert: false },
+            { label: "Pending Approvals", value: String(requests.length), sub: requests.length > 0 ? "needs action" : "all clear", icon: Clock, alert: requests.length > 0 },
+            { label: "Cost Overruns", value: String(overrunOrders), sub: "over budget", icon: AlertTriangle, alert: overrunOrders > 0 },
+            { label: "Pending Payments", value: formatCurrency(pendingPaymentsTotal), sub: `${invoices.length} unpaid invoices`, icon: CreditCard, alert: pendingPaymentsTotal > 0 },
+          ].map((kpi) => (
+            <div key={kpi.label} className="xls-kpi-cell">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="xls-kpi-label">{kpi.label}</div>
+                  <div className={`xls-kpi-value ${kpi.alert ? "text-red-700" : ""}`}>{kpi.value}</div>
+                  <div className="xls-kpi-sub">{kpi.sub}</div>
+                </div>
+                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${kpi.alert ? "bg-red-50" : "bg-slate-50"}`}>
+                  <kpi.icon className={`w-4 h-4 ${kpi.alert ? "text-red-500" : "text-slate-400"}`} />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Production stat cards */}
       {isProduction && (
-        <div className="grid grid-cols-2 gap-4">
-          <StatCard
-            label="My Pending"
-            value={allReqs.filter((r: { status: string }) => r.status === "PENDING").length}
-            icon={Clock}
-            variant="amber"
-            subLabel="awaiting approval"
-            className="stagger-1"
-          />
-          <StatCard
-            label="Approved"
-            value={allReqs.filter((r: { status: string }) => r.status === "APPROVED").length}
-            icon={Package}
-            variant="emerald"
-            subLabel="this period"
-            className="stagger-2"
-          />
+        <div className="xls-kpi-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div className="xls-kpi-cell">
+            <div className="xls-kpi-label">My Pending</div>
+            <div className="xls-kpi-value">{pendingCount}</div>
+            <div className="xls-kpi-sub">awaiting approval</div>
+          </div>
+          <div className="xls-kpi-cell">
+            <div className="xls-kpi-label">Approved</div>
+            <div className="xls-kpi-value text-emerald-700">{approvedCount}</div>
+            <div className="xls-kpi-sub">this period</div>
+          </div>
         </div>
       )}
 
-      {/* ── Charts row ──────────────────────────────── */}
+      {/* ── Quick Actions ── */}
+      {isFinance && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-300 border border-slate-300 rounded overflow-hidden">
+          {[
+            { label: "New Order", icon: ShoppingCart, onClick: () => setShowOrderModal(true), href: undefined },
+            { label: "Raise PO", icon: ClipboardList, onClick: () => setShowPOModal(true), href: undefined },
+            { label: "Buyers", icon: Users, href: "/buyers", onClick: undefined },
+            { label: "Reports", icon: TrendingUp, href: "/reports", onClick: undefined },
+          ].map((qa) => {
+            const content = (
+              <div className="flex flex-col items-center gap-1.5 py-3 bg-white hover:bg-slate-50 transition-colors cursor-pointer w-full h-full">
+                <qa.icon className="w-5 h-5" style={{ color: "#217346" }} />
+                <span className="text-xs font-semibold text-slate-700">{qa.label}</span>
+              </div>
+            );
+            return qa.href ? (
+              <Link key={qa.label} href={qa.href}>{content}</Link>
+            ) : (
+              <button key={qa.label} onClick={qa.onClick}>{content}</button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Charts ── */}
       {isFinance && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Area Chart */}
-          <div className="card lg:col-span-2 p-5" style={{ animation: "staggerFadeUp 0.5s 0.2s both" }}>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="font-bold text-slate-900 text-base">Cost Trend</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Estimated vs Actual — last {chartData.length} orders</p>
+          {/* Cost Trend Chart */}
+          <div className="lg:col-span-2 bg-white border border-slate-300 rounded overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-slate-200 flex items-center justify-between" style={{ background: "#f2f2f2" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Cost Trend</span>
+                <span className="text-xs text-slate-400">Estimated vs Actual</span>
               </div>
-              <div className="flex items-center gap-4 text-xs text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-0.5 bg-indigo-400 rounded-full inline-block" />
-                  Estimated
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-indigo-400 rounded inline-block" /> Estimated
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-0.5 bg-emerald-400 rounded-full inline-block" />
-                  Actual
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-emerald-400 rounded inline-block" /> Actual
                 </span>
               </div>
             </div>
-            {chartData.length > 0 ? (
-              <RevenueAreaChart data={chartData} />
-            ) : (
-              <EmptyState variant="orders" description="Create your first order to see cost trends." />
-            )}
+            <div className="p-4">
+              {chartData.length > 0 ? (
+                <RevenueAreaChart data={chartData} />
+              ) : (
+                <EmptyState variant="orders" description="Create your first order to see cost trends." />
+              )}
+            </div>
           </div>
 
           {/* Donut Chart */}
-          <div className="card p-5" style={{ animation: "staggerFadeUp 0.5s 0.3s both" }}>
-            <div className="mb-3">
-              <h2 className="font-bold text-slate-900 text-base">Request Status</h2>
-              <p className="text-xs text-slate-400 mt-0.5">All-time breakdown</p>
+          <div className="bg-white border border-slate-300 rounded overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-slate-200" style={{ background: "#f2f2f2" }}>
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Request Status</span>
+              <div className="text-xs text-slate-400 mt-0.5">All-time breakdown</div>
             </div>
-            <RequestDonutChart pending={pendingCount} approved={approvedCount} rejected={rejectedCount} />
+            <div className="p-4">
+              <RequestDonutChart pending={pendingCount} approved={approvedCount} rejected={rejectedCount} />
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Quick Actions ────────────────────────────── */}
-      {isFinance && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" style={{ animation: "staggerFadeUp 0.5s 0.35s both" }}>
-          {[
-            { label: "New Order", icon: ShoppingCart, href: undefined, onClick: () => setShowOrderModal(true), color: "bg-blue-50 text-blue-600" },
-            { label: "Raise PO",  icon: ClipboardList, href: undefined, onClick: () => setShowPOModal(true),   color: "bg-violet-50 text-violet-600" },
-            { label: "Buyers",    icon: Users,          href: "/buyers", onClick: undefined,                    color: "bg-emerald-50 text-emerald-600" },
-            { label: "Reports",   icon: TrendingUp,     href: "/reports", onClick: undefined,                   color: "bg-amber-50 text-amber-600" },
-          ].map((qa) =>
-            qa.href ? (
-              <Link key={qa.label} href={qa.href} className="quick-action">
-                <div className={`quick-action-icon ${qa.color}`}><qa.icon className="w-5 h-5" /></div>
-                <span>{qa.label}</span>
-              </Link>
-            ) : (
-              <button key={qa.label} onClick={qa.onClick} className="quick-action">
-                <div className={`quick-action-icon ${qa.color}`}><qa.icon className="w-5 h-5" /></div>
-                <span>{qa.label}</span>
-              </button>
-            )
-          )}
-        </div>
-      )}
+      {/* ── Pending Approvals + Recent Orders ── */}
+      <div className={`grid grid-cols-1 ${canApprove ? "lg:grid-cols-2" : ""} gap-4`}>
 
-      {/* ── Pending Approvals + Recent Orders ──────── */}
-      <div className={`grid grid-cols-1 ${canApprove ? "lg:grid-cols-2" : ""} gap-4`} style={{ animation: "staggerFadeUp 0.5s 0.4s both" }}>
-
-        {/* Pending Approvals */}
         {canApprove && (
-          <div className="card p-0 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <div>
-                <h2 className="font-bold text-slate-900">Pending Approvals</h2>
+          <div className="bg-white border border-slate-300 rounded overflow-hidden">
+            {/* Table-style header */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200" style={{ background: "#217346" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-bold text-xs uppercase tracking-wider">Pending Approvals</span>
                 {requests.length > 0 && (
-                  <p className="text-xs text-amber-600 mt-0.5 font-semibold">{requests.length} request{requests.length !== 1 ? "s" : ""} waiting</p>
+                  <span className="bg-white/20 text-white text-xs font-bold px-1.5 py-0.5 rounded">{requests.length}</span>
                 )}
               </div>
-              <Link href="/requests?status=PENDING" className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold">
-                View all <ArrowRight className="w-3.5 h-3.5" />
+              <Link href="/requests?status=PENDING" className="text-xs text-white/70 hover:text-white flex items-center gap-1">
+                View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
             {requests.length === 0 ? (
               <div className="px-5 py-8"><EmptyState variant="pending-approvals" /></div>
             ) : (
-              <div className="divide-y divide-slate-50">
-                {requests.slice(0, 6).map((req: {
-                  id: string; requestNumber: string; requestType: string;
-                  estimatedAmount: number; createdAt: string; description: string;
-                  order: { orderNumber: string; id: string };
-                  requestedBy: { name: string };
-                }) => (
-                  <div key={req.id} className="overflow-hidden">
-                    <div className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors">
-                      <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
-                        <Zap className="w-4 h-4 text-violet-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+              <table className="w-full border-collapse" style={{ fontSize: "0.75rem" }}>
+                <thead>
+                  <tr style={{ background: "#f2f2f2" }}>
+                    <th className="text-left px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">PO No.</th>
+                    <th className="text-left px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">Order · By</th>
+                    <th className="text-right px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">Amount</th>
+                    <th className="text-center px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.slice(0, 6).map((req: {
+                    id: string; requestNumber: string; requestType: string;
+                    estimatedAmount: number; createdAt: string; description: string;
+                    order: { orderNumber: string; id: string };
+                    requestedBy: { name: string };
+                  }) => (
+                    <>
+                      <tr key={req.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td className="px-3 py-2">
                           <button
                             onClick={() => setPreviewId(req.id)}
-                            className="font-mono text-xs font-bold text-blue-600 hover:underline text-left"
+                            className="font-mono font-bold hover:underline"
+                            style={{ color: "#217346" }}
                           >
                             {req.requestNumber}
                           </button>
-                          <StatusBadge status={req.requestType} />
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5 truncate">
-                          {req.order.orderNumber} · {req.requestedBy.name} · {formatDate(req.createdAt)}
-                        </p>
-                      </div>
-                      <div className="text-sm font-bold text-slate-900 tabular-nums flex-shrink-0">
-                        {formatCurrency(req.estimatedAmount)}
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {approvedIds.has(req.id) ? (
-                          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Done
-                          </span>
-                        ) : (
-                          <>
-                            <button onClick={() => approveMutation.mutate(req.id)} disabled={approveMutation.isPending && approveMutation.variables === req.id} className="btn-approve">
-                              {approveMutation.isPending && approveMutation.variables === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                              Approve
-                            </button>
-                            <button onClick={() => setRejectOpenId(rejectOpenId === req.id ? null : req.id)} className="btn-reject">
-                              <X className="w-3 h-3" /> Reject
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {rejectOpenId === req.id && (
-                      <div className="reject-inline px-5 pb-4 pt-3 bg-red-50 border-t border-red-100">
-                        <p className="text-xs text-red-700 font-semibold mb-2">Reason for rejection:</p>
-                        <textarea
-                          className="form-input text-sm resize-none"
-                          rows={2}
-                          placeholder="Explain why this request is being rejected..."
-                          value={rejectNote[req.id] || ""}
-                          onChange={(e) => setRejectNote((prev) => ({ ...prev, [req.id]: e.target.value }))}
-                          autoFocus
-                        />
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => rejectMutation.mutate({ id: req.id, note: rejectNote[req.id] || "" })} disabled={rejectMutation.isPending || !(rejectNote[req.id]?.trim())} className="btn-danger text-xs py-1.5 px-3">
-                            {rejectMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Confirm Reject
-                          </button>
-                          <button onClick={() => setRejectOpenId(null)} className="btn-secondary text-xs py-1.5 px-3">Cancel</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                          <div className="mt-0.5"><StatusBadge status={req.requestType} /></div>
+                        </td>
+                        <td className="px-3 py-2 text-slate-500">
+                          <div>{req.order.orderNumber}</div>
+                          <div className="text-slate-400">{req.requestedBy.name}</div>
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-slate-900 tabular-nums">
+                          {formatCurrency(req.estimatedAmount)}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          {approvedIds.has(req.id) ? (
+                            <span className="text-emerald-600 font-bold flex items-center justify-center gap-1">
+                              <Check className="w-3 h-3" /> Done
+                            </span>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1">
+                              <button onClick={() => approveMutation.mutate(req.id)}
+                                disabled={approveMutation.isPending && approveMutation.variables === req.id}
+                                className="btn-approve">
+                                {approveMutation.isPending && approveMutation.variables === req.id
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : <Check className="w-3 h-3" />}
+                                OK
+                              </button>
+                              <button onClick={() => setRejectOpenId(rejectOpenId === req.id ? null : req.id)}
+                                className="btn-reject">
+                                <X className="w-3 h-3" /> No
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                      {rejectOpenId === req.id && (
+                        <tr key={`${req.id}-reject`} className="bg-red-50 border-b border-red-100">
+                          <td colSpan={4} className="px-3 pb-3 pt-2">
+                            <p className="text-xs text-red-700 font-semibold mb-1">Reason for rejection:</p>
+                            <textarea
+                              className="form-input text-xs resize-none w-full"
+                              rows={2}
+                              placeholder="Explain why this request is being rejected..."
+                              value={rejectNote[req.id] || ""}
+                              onChange={(e) => setRejectNote((prev) => ({ ...prev, [req.id]: e.target.value }))}
+                              autoFocus
+                            />
+                            <div className="flex gap-2 mt-1.5">
+                              <button onClick={() => rejectMutation.mutate({ id: req.id, note: rejectNote[req.id] || "" })}
+                                disabled={rejectMutation.isPending || !(rejectNote[req.id]?.trim())}
+                                className="btn-danger text-xs py-1 px-3">
+                                {rejectMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Confirm Reject
+                              </button>
+                              <button onClick={() => setRejectOpenId(null)} className="btn-secondary text-xs py-1 px-3">Cancel</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         )}
 
         {/* Recent Orders */}
-        <div className="card p-0 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-900">Recent Orders</h2>
-            <Link href="/orders" className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold">
-              View all <ArrowRight className="w-3.5 h-3.5" />
+        <div className="bg-white border border-slate-300 rounded overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200" style={{ background: "#217346" }}>
+            <span className="text-white font-bold text-xs uppercase tracking-wider">Recent Orders</span>
+            <Link href="/orders" className="text-xs text-white/70 hover:text-white flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           {orders.length === 0 ? (
             <div className="px-5 py-8"><EmptyState variant="orders" ctaLabel="Create First Order" ctaHref="/orders/new" /></div>
           ) : (
-            <div className="divide-y divide-slate-50">
-              {orders.slice(0, 6).map((order: {
-                id: string; orderNumber: string; status: string; orderValue: number;
-                estimatedCost: number; invoicedCost: number;
-                buyer: { name: string };
-              }) => {
-                const pct = order.estimatedCost > 0 ? Math.round((order.invoicedCost / order.estimatedCost) * 100) : 0;
-                const isOver = order.invoicedCost > order.estimatedCost;
-                const barColor = isOver ? "cost-bar-red" : pct > 90 ? "cost-bar-yellow" : "cost-bar-green";
-                return (
-                  <Link key={order.id} href={`/orders/${order.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors group">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isOver ? "bg-red-50" : "bg-blue-50"}`}>
-                      <Package className={`w-4 h-4 ${isOver ? "text-red-500" : "text-blue-500"}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-mono text-xs font-bold text-blue-600">{order.orderNumber}</span>
-                          <span className="text-xs text-slate-400 truncate">{order.buyer.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <StatusBadge status={order.status} />
-                          <span className={`text-xs font-bold tabular-nums ${isOver ? "text-red-500" : "text-slate-500"}`}>{pct}%</span>
-                        </div>
-                      </div>
-                      <div className="cost-bar-wrap" style={{ height: 4 }}>
-                        <div className={`cost-bar-fill ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            <table className="w-full border-collapse" style={{ fontSize: "0.75rem" }}>
+              <thead>
+                <tr style={{ background: "#f2f2f2" }}>
+                  <th className="text-left px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">Order No.</th>
+                  <th className="text-left px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">Buyer</th>
+                  <th className="text-right px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">Cost %</th>
+                  <th className="text-center px-3 py-1.5 border-b border-slate-200 text-slate-600 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.slice(0, 6).map((order: {
+                  id: string; orderNumber: string; status: string; orderValue: number;
+                  estimatedCost: number; invoicedCost: number;
+                  buyer: { name: string };
+                }) => {
+                  const pct = order.estimatedCost > 0 ? Math.round((order.invoicedCost / order.estimatedCost) * 100) : 0;
+                  const isOver = order.invoicedCost > order.estimatedCost;
+                  return (
+                    <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="px-3 py-2">
+                        <Link href={`/orders/${order.id}`} className="font-mono font-bold hover:underline" style={{ color: "#217346" }}>
+                          {order.orderNumber}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">{order.buyer.name}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums font-semibold ${isOver ? "text-red-600" : "text-emerald-600"}`}>
+                        {order.estimatedCost > 0 ? `${pct}%` : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <StatusBadge status={order.status} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
 
-      {/* ── Modals ─────────────────────────────────── */}
+      {/* ── Modals ── */}
       <SlideUpModal isOpen={showPOModal} onClose={() => setShowPOModal(false)} title="New Purchase Order" maxWidth="3xl">
         <NewPOContent
           onClose={() => setShowPOModal(false)}
@@ -462,7 +462,6 @@ export default function DashboardPage() {
         />
       </SlideUpModal>
 
-      {/* PO Preview + Approve/Reject from dashboard */}
       <POReviewModal
         requestId={previewId}
         onClose={() => setPreviewId(null)}

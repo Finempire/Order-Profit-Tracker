@@ -25,16 +25,16 @@ export function TopNav({ onMenuClick }: TopNavProps) {
   const userInitial = session?.user?.name?.[0]?.toUpperCase() || "U";
 
   return (
-    <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
+    <header className="h-11 bg-white border-b flex items-center justify-between px-4 lg:px-5 sticky top-0 z-20" style={{ borderColor: "#c7c7c7" }}>
       {/* Left: mobile menu toggle */}
       <Button
         variant="ghost"
         size="icon"
         onClick={onMenuClick}
-        className="h-8 w-8 text-muted-foreground hover:text-foreground lg:hidden"
+        className="h-7 w-7 text-slate-500 hover:text-slate-800 lg:hidden"
         aria-label="Toggle menu"
       >
-        <Menu className="w-5 h-5" />
+        <Menu className="w-4 h-4" />
       </Button>
       <div className="hidden lg:block" />
 
