@@ -7,15 +7,12 @@ import { useState } from "react";
 import {
   LayoutDashboard, Package, Users, Building2, ClipboardList,
   FileText, CreditCard, BarChart3, Settings, LogOut,
-  X, ChevronLeft, ChevronRight, Plus, Activity,
+  X, ChevronLeft, ChevronRight, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/Logo";
 
 interface NavItem {
   href: string;
@@ -62,14 +59,6 @@ export function Sidebar({ onClose }: SidebarProps) {
   const filteredItems = navItems.filter((item) => !role || item.roles.includes(role));
   const isProduction = role === "PRODUCTION";
   const userInitial  = session?.user?.name?.[0]?.toUpperCase() || "U";
-
-  const roleColors: Record<string, string> = {
-    ADMIN:      "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
-    CEO:        "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-    ACCOUNTANT: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-    PRODUCTION: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  };
-  const roleBadge = role ? roleColors[role] || "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/60" : "";
 
   return (
     <TooltipProvider delayDuration={0}>

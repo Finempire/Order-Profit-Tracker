@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SlideUpModal } from "@/components/shared/SlideUpModal";
 import { NewOrderContent } from "@/components/orders/NewOrderContent";
-import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Filter, Download, RefreshCw } from "lucide-react";
+import { Plus, Search, Trash2, Filter, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";

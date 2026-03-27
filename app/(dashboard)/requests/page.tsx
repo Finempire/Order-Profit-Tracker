@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SlideUpModal } from "@/components/shared/SlideUpModal";
 import { NewPOContent } from "@/components/requests/NewPOContent";
 import { POReviewModal } from "@/components/requests/POReviewModal";
-import { Plus, Eye, Trash2, ChevronLeft, ChevronRight, FileText, Filter, RefreshCw } from "lucide-react";
+import { Plus, Eye, Trash2, FileText, Filter, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";

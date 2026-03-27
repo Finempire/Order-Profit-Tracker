@@ -6,11 +6,11 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RevenueAreaChart } from "@/components/charts/RevenueAreaChart";
 import { RequestDonutChart } from "@/components/charts/RequestDonutChart";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import {
   Package, AlertTriangle, Clock, CreditCard, Check, X,
   ClipboardList, Loader2, ArrowRight,
-  ShoppingCart, FileText, Users, TrendingUp, Zap,
+  ShoppingCart, FileText, Users, TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
