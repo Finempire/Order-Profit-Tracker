@@ -870,3 +870,224 @@
 .stagger-2 { animation-delay: 0.10s; }
 .stagger-3 { animation-delay: 0.15s; }
 .stagger-4 { animation-delay: 0.20s; }
+
+/* ═══════════════════════════════════════════════════
+   EXCEL SPREADSHEET THEME
+   ═══════════════════════════════════════════════════ */
+
+/* Excel green palette */
+:root {
+  --xls-green:       #217346;
+  --xls-green-dark:  #185a38;
+  --xls-green-light: #e2efda;
+  --xls-border:      #c7c7c7;
+  --xls-row-num-bg:  #f2f2f2;
+  --xls-header-bg:   #217346;
+  --xls-header-txt:  #ffffff;
+  --xls-hover:       #e8f5e9;
+}
+
+/* ── Excel Toolbar ────────────────────────────── */
+.xls-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid var(--xls-border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  flex-wrap: wrap;
+}
+.xls-toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+  min-width: 0;
+}
+.xls-toolbar-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--xls-green);
+  color: white;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: -0.03em;
+}
+.xls-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--xls-border);
+  border-radius: 3px;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.xls-toolbar-btn:hover { background: #e9ecef; border-color: #adb5bd; }
+.xls-toolbar-btn-primary {
+  background: var(--xls-green);
+  color: white;
+  border-color: var(--xls-green-dark);
+}
+.xls-toolbar-btn-primary:hover { background: var(--xls-green-dark); }
+
+/* ── Excel Spreadsheet Table ──────────────────── */
+.xls-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--xls-border);
+  border-radius: 0 0 4px 4px;
+}
+table.xls-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  background: white;
+  min-width: 480px;
+}
+table.xls-table thead tr {
+  background: var(--xls-header-bg);
+}
+table.xls-table thead th {
+  background: var(--xls-header-bg);
+  color: var(--xls-header-txt);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid #185a38;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+table.xls-table thead th:first-child {
+  background: #1a5c37;
+  color: #a0c8b0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-align: center;
+  width: 40px;
+  min-width: 40px;
+  padding: 0.45rem 0.25rem;
+}
+table.xls-table tbody tr {
+  border-bottom: 1px solid #e4e4e4;
+  transition: background 0.08s;
+}
+table.xls-table tbody tr:hover { background: var(--xls-hover); }
+table.xls-table tbody td {
+  padding: 0.375rem 0.6rem;
+  color: #1a1a1a;
+  border-right: 1px solid #e4e4e4;
+  vertical-align: middle;
+  line-height: 1.45;
+}
+table.xls-table tbody td:last-child { border-right: none; }
+table.xls-table tbody td:first-child {
+  background: var(--xls-row-num-bg);
+  color: #888;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-align: center;
+  border-right: 2px solid var(--xls-border);
+  width: 40px;
+  min-width: 40px;
+  padding: 0.375rem 0.25rem;
+  user-select: none;
+}
+table.xls-table tbody td.xls-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  text-align: right;
+  font-weight: 500;
+  padding-right: 0.75rem;
+}
+table.xls-table tbody tr.xls-empty td {
+  color: #ccc;
+  font-size: 0.7rem;
+  height: 1.5rem;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+table.xls-table tbody tr.xls-empty td:first-child {
+  color: #ccc;
+}
+
+/* ── Excel Status Bar ─────────────────────────── */
+.xls-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--xls-green);
+  color: rgba(255,255,255,0.9);
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 0 0 4px 4px;
+  border: 1px solid var(--xls-green-dark);
+  border-top: none;
+}
+.xls-sheet-tab {
+  padding: 0.2rem 0.875rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: white;
+  color: var(--xls-green);
+  border-radius: 2px 2px 0 0;
+  cursor: default;
+  margin-right: 2px;
+  letter-spacing: 0.01em;
+}
+
+/* ── Excel KPI Grid ───────────────────────────── */
+.xls-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0;
+  border: 1px solid var(--xls-border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--xls-border);
+}
+.xls-kpi-cell {
+  padding: 0.875rem 1rem;
+  background: white;
+}
+.xls-kpi-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--xls-green);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+}
+.xls-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.xls-kpi-sub {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 0.2rem;
+}

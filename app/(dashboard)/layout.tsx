@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const role = (session?.user as { role?: string } | undefined)?.role;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden" style={{ background: "#f0f0f0" }}>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-shrink-0">
         <Sidebar />
